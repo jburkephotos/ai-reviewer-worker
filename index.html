@@ -101,6 +101,43 @@
   .note{font-size:13px;color:rgba(26,29,28,.55);font-style:italic;margin:18px 0;
     padding-left:14px;border-left:2px solid var(--sand)}
   .err{background:#fbeae5;border:1px solid var(--bad);color:var(--bad);padding:16px 20px;border-radius:3px;margin:20px 0}
+  .deepform{background:var(--ink);color:var(--paper);border-radius:3px;padding:26px 28px;margin:26px 0}
+  .deepform .qlab{color:var(--mark-soft);color:#e8a07a}
+  .deepform .qhead{color:var(--paper)}
+  .deepform .qsub{color:rgba(244,242,236,.72)}
+  .ff{margin-top:18px;display:grid;gap:12px}
+  .ffrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ff label{display:block;font-size:12px;font-family:"SF Mono",ui-monospace,monospace;
+    letter-spacing:.06em;text-transform:uppercase;color:rgba(244,242,236,.7)}
+  .ff .opt{text-transform:none;letter-spacing:0;font-style:italic;opacity:.6;font-family:inherit}
+  .ff input,.ff textarea{width:100%;margin-top:5px;padding:10px 12px;font-size:15px;
+    font-family:inherit;color:var(--ink);background:var(--paper);border:1px solid transparent;border-radius:2px;text-transform:none;letter-spacing:0}
+  .ff input:focus,.ff textarea:focus{outline:2px solid var(--mark);outline-offset:1px}
+  .ff textarea{resize:vertical}
+  .budget .blab{display:block;font-size:12px;font-family:"SF Mono",ui-monospace,monospace;
+    letter-spacing:.06em;text-transform:uppercase;color:rgba(244,242,236,.7);margin-bottom:8px}
+  .bopts{display:flex;flex-wrap:wrap;gap:8px}
+  .bopts button{appearance:none;cursor:pointer;background:transparent;color:var(--paper);
+    border:1px solid rgba(244,242,236,.35);border-radius:2px;padding:8px 14px;font-size:13px;font-family:inherit;transition:all .12s}
+  .bopts button:hover{border-color:var(--mark-soft)}
+  .bopts button.sel{background:var(--mark);border-color:var(--mark);color:#fff;font-weight:600}
+  .ffsubmit{margin-top:6px;background:var(--mark);justify-self:start}
+  .ffsubmit:hover{background:var(--paper);color:var(--ink)}
+  .ffmsg{font-size:13px;font-family:"SF Mono",ui-monospace,monospace;min-height:18px}
+  .ffmsg.good{color:#9fd0b8}
+  .ffmsg.warn{color:#e8a07a}
+  #deepreport{margin-top:28px}
+  .deepwait{font-family:"SF Mono",ui-monospace,monospace;font-size:14px;color:var(--kelp);
+    padding:24px;background:var(--paper);border:1px solid var(--line);border-radius:3px;text-align:center}
+  .deephead{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:8px 0 16px;
+    padding-bottom:10px;border-bottom:2px solid var(--ink)}
+  .pageblock{margin:22px 0;padding:18px 20px;background:var(--paper);border:1px solid var(--line);border-radius:3px}
+  .pagehead{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap;
+    padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .ppath{font-family:"SF Mono",ui-monospace,monospace;font-size:14px;font-weight:700;color:var(--mark)}
+  .prole{font-size:13px;color:rgba(26,29,28,.6);font-style:italic}
+  .pageblock .finding{padding:11px 0}
+  .pageblock .finding:last-of-type{border-bottom:none}
   footer.foot{border-top:2px solid var(--ink);margin-top:40px;padding:22px 0 50px;font-size:13px;color:rgba(26,29,28,.55)}
   footer.foot strong{color:var(--ink)}
   @media(max-width:620px){.surfaces{grid-template-columns:1fr}.inrow{flex-direction:column}
@@ -190,10 +227,11 @@ function render(d) {
   let h = "";
 
   // score band
+  const sc = d.score || {};
   h += `<div class="scoreband">
-    <div class="scorenum">${ent ? "—" : esc(d.score)}${ent ? "" : "<small>/10</small>"}</div>
+    <div class="scorenum">${ent ? "—" : esc(sc.grade)}${ent ? "" : `<small>${esc(sc.pct)}%</small>`}</div>
     <div class="scoremeta">
-      <div class="tier">${esc(d.tier)} tier · ${esc(d.signals.pageCount)}${d.signals.crawlCapped?"+":""} pages${d.signals.hasStore?" · sells online":""}</div>
+      <div class="tier">${esc(d.tier)} tier · ${esc(d.signals.pageCount)}${d.signals.crawlCapped?"+":""} pages${d.signals.commerceState==="store"?" · sells online":d.signals.commerceState==="installed_empty"?" · store set up, not stocked":""}</div>
       <div class="tname">${esc(d.quote.name)}</div>
       <div class="tdesc">${esc(TIER_DESC[d.tier]||"")}</div>
     </div>
@@ -234,9 +272,145 @@ function render(d) {
   // bottom quote
   h += quoteBlock(d, "bottom");
 
+  // deep-report qualifying form (the gate to the full page-by-page report)
+  h += deepReportForm(d);
+
   reportEl.innerHTML = h;
   reportEl.classList.add('show');
   reportEl.scrollIntoView({ behavior:"smooth", block:"start" });
+  wireDeepForm(d);
+}
+
+function deepReportForm(d) {
+  if (d.quote.enterprise) return ""; // enterprise routes to a call instead
+  return `<div class="deepform" id="deepform">
+    <div class="qlab">The full report</div>
+    <div class="qhead">Want the complete, page-by-page breakdown?</div>
+    <div class="qsub">What you see above is the summary, and it's already yours to keep. Want the complete page-by-page breakdown — every page on your site, every fix, the exact structured data? Leave your details and I'll send it over and follow up personally. We share what we've learned because we want Oregon Coast businesses found and cited by the AI search engines. You can hand the report to anyone, do it yourself, or have us do it with you. Either way, the knowledge is yours.</div>
+    <div class="ff">
+      <div class="ffrow">
+        <label>First name<input type="text" id="f_name" autocomplete="given-name"></label>
+        <label>Email<input type="email" id="f_email" autocomplete="email"></label>
+      </div>
+      <label>Business<input type="text" id="f_biz" autocomplete="organization"></label>
+      <label>What's working well on your site right now? <span class="opt">(optional)</span><textarea id="f_works" rows="2"></textarea></label>
+      <label>What's not working, or frustrating you? <span class="opt">(optional)</span><textarea id="f_broken" rows="2"></textarea></label>
+      <div class="budget">
+        <span class="blab">Roughly what could you invest in fixing this?</span>
+        <div class="bopts" id="f_budget">
+          <button type="button" data-v="Just exploring">Just exploring</button>
+          <button type="button" data-v="Under $1k">Under $1k</button>
+          <button type="button" data-v="$1–3k">$1–3k</button>
+          <button type="button" data-v="$3k+">$3k+</button>
+          <button type="button" data-v="Not sure yet">Not sure yet</button>
+        </div>
+      </div>
+      <button class="run ffsubmit" id="f_submit">Send me the full report</button>
+      <div class="ffmsg" id="f_msg"></div>
+    </div>
+  </div>`;
+}
+
+function wireDeepForm(d) {
+  const form = document.getElementById('deepform');
+  if (!form) return;
+  let budget = "";
+  form.querySelectorAll('#f_budget button').forEach(b => {
+    b.addEventListener('click', () => {
+      form.querySelectorAll('#f_budget button').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel'); budget = b.dataset.v;
+    });
+  });
+  document.getElementById('f_submit').addEventListener('click', async () => {
+    const name = document.getElementById('f_name').value.trim();
+    const email = document.getElementById('f_email').value.trim();
+    const biz = document.getElementById('f_biz').value.trim();
+    const msg = document.getElementById('f_msg');
+    if (!name || !email) { msg.textContent = "First name and email, please — that's all I need."; msg.className = "ffmsg warn"; return; }
+    msg.textContent = "Sending…"; msg.className = "ffmsg";
+    try {
+      const res = await fetch('/api/lead', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          url: d.url, tier: d.tier, score: d.score,
+          name, email, business: biz,
+          works: document.getElementById('f_works').value.trim(),
+          broken: document.getElementById('f_broken').value.trim(),
+          budget,
+        })
+      });
+      if (res.ok) {
+        msg.innerHTML = "Got it — building your full page-by-page report now. This takes a minute…";
+        msg.className = "ffmsg good";
+        document.getElementById('f_submit').disabled = true;
+        runDeepReport(d.url);
+      } else {
+        msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";
+        msg.className = "ffmsg warn";
+      }
+    } catch {
+      msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";
+      msg.className = "ffmsg warn";
+    }
+  });
+}
+
+async function runDeepReport(url) {
+  let host = document.getElementById('deepreport');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'deepreport';
+    document.getElementById('report').appendChild(host);
+  }
+  const steps = ["Re-reading every page individually","Checking each page for AI-search readiness","Writing your page-by-page breakdown","Pulling it all together"];
+  let si = 0;
+  host.innerHTML = `<div class="deepwait"><span class="dots">${steps[0]}</span></div>`;
+  const tick = setInterval(() => {
+    si = Math.min(si+1, steps.length-1);
+    const dd = host.querySelector('.dots'); if (dd) dd.textContent = steps[si];
+  }, 9000);
+
+  try {
+    const res = await fetch('/api/deep', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    clearInterval(tick);
+    if (!res.ok || data.error) {
+      host.innerHTML = `<div class="note">Your full report is taking longer than expected — I'll send it to you personally. Everything above is yours to keep in the meantime.</div>`;
+      return;
+    }
+    renderDeep(host, data);
+    host.scrollIntoView({ behavior:"smooth", block:"start" });
+  } catch {
+    clearInterval(tick);
+    host.innerHTML = `<div class="note">Your full report is taking longer than expected — I'll send it to you personally. Everything above is yours to keep in the meantime.</div>`;
+  }
+}
+
+function renderDeep(host, data) {
+  let h = `<div class="deephead">The full page-by-page report</div>`;
+  if (data.overall) h += `<div class="verdict">${esc(data.overall)}</div>`;
+  for (const pg of (data.pages || [])) {
+    if (!pg.findings || !pg.findings.length) continue;
+    let path;
+    try { path = new URL(pg.url).pathname || "/"; } catch { path = pg.url; }
+    h += `<div class="pageblock">
+      <div class="pagehead"><span class="ppath">${esc(path)}</span>${pg.role?`<span class="prole">${esc(pg.role)}</span>`:""}</div>`;
+    for (const f of pg.findings) {
+      const lbl = f.priority === "high" ? "Critical" : f.priority === "med" ? "Important" : "Polish";
+      const bk = f.bucket === "agent" ? "Agent does this" : f.bucket === "editorial" ? "Jeremy writes this" : "Needs your sign-off";
+      h += `<div class="finding">
+        <div class="pri ${esc(f.priority)}">${lbl}</div>
+        <div class="fbody"><div class="ftitle">${esc(f.title)}</div>
+        <div class="frec">${esc(f.rec)}</div>
+        <span class="bucket ${esc(f.bucket)}">${bk}</span></div></div>`;
+    }
+    h += `</div>`;
+  }
+  h += `<p class="note">That's every page on your site, with the specific fix for each. It's all yours — hand it to anyone, do it yourself, or have me do it with you.</p>`;
+  host.innerHTML = h;
 }
 
 function quoteBlock(d, pos) {

@@ -93,6 +93,29 @@ If the tier or quote ever looks wrong, the bug is in the deterministic layer (au
 
 ---
 
+## Where leads land — pick one (the form never loses a lead)
+
+The qualifying form posts to `/api/lead` (`functions/api/lead.js`). It ALWAYS logs each
+submission, so nothing is ever lost. Pick how you want to actually receive them:
+
+**Recommended — email to your inbox (~5 min):**
+1. Free account at **resend.com**, create an API key.
+2. Cloudflare → your Pages project → **Settings → Variables and Secrets**, add:
+   - `RESEND_API_KEY` — your Resend key — as a **Secret**
+   - `LEAD_TO` — your email (jlburkephotos@gmail.com) — as a plain variable
+   - (optional) `LEAD_FROM` — leave unset until you verify a domain; it uses Resend's test
+     sender, which delivers fine to your own inbox.
+3. Redeploy. Every lead now emails to you instantly, visitor's email as reply-to. Your
+   inbox is your lead list.
+
+**Durable list — KV (optional, later):** bind a KV namespace named `LEADS` (Settings →
+Functions → KV bindings). Leads also write there permanently for export.
+
+**Zero setup:** with neither, leads appear in Deployments → your deploy → Functions logs as
+`NEW LEAD: {...}`. Nothing lost; just read them there until you wire up email.
+
+---
+
 ## Where this sits in the funnel
 Prospector ranks chamber businesses (great reviews + weak site) → you point **AI Review**
 at the top of that list → free report + auto-quote → you close the phased work → the
