@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Review — J. Burke Photos</title>
+<style>
+  :root {
+    --ink:#1a1d1c; --fog:#e8e6df; --fog-deep:#d6d3c9; --sand:#c4bca8;
+    --kelp:#2f4a3e; --kelp-light:#4a6b5b; --tide:#3a5a6b;
+    --mark:#d4622a; --mark-soft:#e8a07a; --paper:#f4f2ec;
+    --line:rgba(26,29,28,0.14); --warn:#c9952f; --bad:#c0492a;
+    --shadow:0 1px 0 rgba(26,29,28,0.06), 0 12px 32px -16px rgba(26,29,28,0.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fog);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55;font-size:17px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px}
+  header.masthead{border-bottom:2px solid var(--ink);padding:30px 0 18px}
+  .eyebrow{font-family:"SF Mono","IBM Plex Mono",ui-monospace,Menlo,monospace;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mark);font-weight:600}
+  h1.title{font-size:clamp(34px,6vw,56px);line-height:.98;letter-spacing:-.02em;font-weight:700;margin:6px 0 8px}
+  .subtitle{font-size:16px;color:rgba(26,29,28,.66);max-width:56ch}
+  .panel{background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);
+    border-radius:3px;padding:26px;margin:28px 0}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;
+    font-family:"SF Mono",ui-monospace,monospace;font-weight:600;color:var(--kelp);margin-bottom:16px}
+  .inrow{display:flex;gap:12px}
+  input[type=text]{flex:1;padding:13px 15px;font-size:17px;font-family:inherit;color:var(--ink);
+    background:#fff;border:1px solid var(--sand);border-radius:2px}
+  input:focus{outline:2px solid var(--mark);outline-offset:1px;border-color:var(--mark)}
+  button.run{appearance:none;border:none;cursor:pointer;background:var(--ink);color:var(--paper);
+    font-family:"SF Mono",ui-monospace,monospace;font-size:13px;letter-spacing:.08em;
+    text-transform:uppercase;font-weight:600;padding:13px 26px;border-radius:2px;transition:background .15s;white-space:nowrap}
+  button.run:hover{background:var(--mark)}
+  button.run:disabled{opacity:.5;cursor:wait}
+  .hint{font-size:12px;color:rgba(26,29,28,.5);font-style:italic;margin-top:10px}
+  #status{display:none;margin:20px 0;font-family:"SF Mono",ui-monospace,monospace;
+    font-size:13px;color:var(--kelp)}
+  #status.show{display:block}
+  .dots::after{content:"";animation:dots 1.4s steps(4,end) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+  #report{display:none;margin:36px 0 60px}
+  #report.show{display:block;animation:rise .5s cubic-bezier(.2,.7,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .scoreband{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;
+    background:var(--ink);color:var(--paper);border-radius:3px;padding:28px 30px;margin-bottom:18px}
+  .scorenum{font-size:64px;font-weight:700;line-height:.9;letter-spacing:-.03em}
+  .scorenum small{font-size:22px;opacity:.5}
+  .scoremeta .tier{font-family:"SF Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:#e8a07a;font-weight:600;margin-bottom:4px}
+  .scoremeta .tname{font-size:24px;font-weight:700;margin-bottom:4px}
+  .scoremeta .tdesc{font-size:14px;opacity:.75}
+  .verdict{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--kelp);
+    border-radius:3px;padding:20px 24px;margin-bottom:18px;font-size:16px}
+  .surfaces{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:8px}
+  .surface{background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:16px}
+  .surface .sname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--mark);font-weight:600;margin-bottom:8px}
+  .surface .sbody{font-size:13.5px;color:rgba(26,29,28,.78)}
+  .quote{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--mark);
+    border-radius:3px;padding:22px 26px;margin:22px 0}
+  .quote.enterprise{border-left-color:var(--tide)}
+  .qlab{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--mark);font-weight:600;margin-bottom:10px}
+  .quote.enterprise .qlab{color:var(--tide)}
+  .qhead{font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+  .qsub{font-size:14px;color:rgba(26,29,28,.66);margin-bottom:16px}
+  .phases{display:grid;gap:10px}
+  .phase{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:baseline;
+    padding:11px 0;border-top:1px solid var(--line)}
+  .phase:first-child{border-top:none}
+  .phase .pn{font-family:"SF Mono",ui-monospace,monospace;font-size:12px;font-weight:600;color:var(--mark);white-space:nowrap}
+  .phase .pwhat{font-size:14.5px}
+  .phase .pwhat .who{display:block;font-size:12px;color:rgba(26,29,28,.5);font-style:italic;margin-top:1px}
+  .phase .pprice{font-size:16px;font-weight:700;white-space:nowrap}
+  .qtotal{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;
+    padding-top:14px;border-top:2px solid var(--ink);font-weight:700}
+  .qtotal .big{font-size:22px}
+  .photo{font-size:13px;color:var(--kelp);margin-top:12px;padding:11px 14px;
+    background:rgba(47,74,62,.07);border-radius:2px}
+  .ent-cta{display:inline-block;margin-top:8px;background:var(--tide);color:#fff;text-decoration:none;
+    padding:11px 22px;border-radius:2px;font-family:"SF Mono",ui-monospace,monospace;font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+  .findhead{font-size:13px;text-transform:uppercase;letter-spacing:.12em;
+    font-family:"SF Mono",ui-monospace,monospace;font-weight:600;color:var(--kelp);
+    margin:30px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .finding{display:grid;grid-template-columns:86px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .pri{font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;font-weight:700;padding:3px 0;height:fit-content}
+  .pri.high{color:var(--bad)} .pri.med{color:var(--warn)} .pri.low{color:var(--kelp-light)}
+  .fbody .ftitle{font-weight:600;font-size:15.5px;margin-bottom:3px}
+  .fbody .frec{font-size:14px;color:rgba(26,29,28,.66)}
+  .bucket{display:inline-block;font-family:"SF Mono",ui-monospace,monospace;font-size:10px;
+    letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:10px;margin-top:6px;
+    background:var(--fog-deep);color:rgba(26,29,28,.6)}
+  .bucket.agent{background:rgba(47,74,62,.12);color:var(--kelp)}
+  .bucket.editorial{background:rgba(212,98,42,.13);color:var(--mark)}
+  .bucket.approve{background:rgba(58,90,107,.12);color:var(--tide)}
+  .note{font-size:13px;color:rgba(26,29,28,.55);font-style:italic;margin:18px 0;
+    padding-left:14px;border-left:2px solid var(--sand)}
+  .err{background:#fbeae5;border:1px solid var(--bad);color:var(--bad);padding:16px 20px;border-radius:3px;margin:20px 0}
+  footer.foot{border-top:2px solid var(--ink);margin-top:40px;padding:22px 0 50px;font-size:13px;color:rgba(26,29,28,.55)}
+  footer.foot strong{color:var(--ink)}
+  @media(max-width:620px){.surfaces{grid-template-columns:1fr}.inrow{flex-direction:column}
+    .scoreband{grid-template-columns:1fr;gap:12px}.finding{grid-template-columns:1fr;gap:4px}
+    .phase{grid-template-columns:1fr auto}.phase .pn{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">J. Burke Photos · Discoverability</div>
+    <h1 class="title">AI Review</h1>
+    <p class="subtitle">A plain-language audit of how your website shows up in Google, in the map pack, and in AI answers like ChatGPT and Perplexity — and exactly what it takes to fix it. Free, and yours to keep.</p>
+  </header>
+
+  <section class="panel">
+    <h2>Run a free audit</h2>
+    <div class="inrow">
+      <input type="text" id="url" placeholder="yourwebsite.com" autocomplete="off" spellcheck="false">
+      <button class="run" id="runbtn">Audit my site</button>
+    </div>
+    <div class="hint">Takes 20–40 seconds. It reads your live site and writes a real report — no email required to see it.</div>
+  </section>
+
+  <div id="status"><span class="dots">Reading your site</span></div>
+  <section id="report" aria-live="polite"></section>
+
+  <footer class="foot">
+    <strong>How the quote is sized.</strong> The estimate comes from what the audit actually finds on your site — page count, whether you sell online, and how much structured-data and content work is missing. It's confirmed after a 15-minute look by Jeremy. A human is always in the loop where judgment matters.
+  </footer>
+</div>
+
+<script>
+const TIER_DESC = {
+  small: "A brochure site — a few pages, no online store. Fast to fix, big visible lift.",
+  medium: "A real multi-page site — services or content, not yet selling online.",
+  large: "A substantial site or online store — catalog, many pages, transactions to protect.",
+  enterprise: "35+ pages, deep navigation, multiple audiences — a destination or institution."
+};
+const STATUS_STEPS = ["Reading your site","Checking schema & metadata","Measuring AI-search readiness","Writing your report"];
+
+const btn = document.getElementById('runbtn');
+const urlIn = document.getElementById('url');
+const statusEl = document.getElementById('status');
+const reportEl = document.getElementById('report');
+
+async function run() {
+  const url = urlIn.value.trim();
+  if (!url) { urlIn.focus(); return; }
+  btn.disabled = true;
+  reportEl.classList.remove('show'); reportEl.innerHTML = "";
+  let step = 0;
+  statusEl.classList.add('show');
+  statusEl.querySelector('.dots').textContent = STATUS_STEPS[0];
+  const tick = setInterval(() => {
+    step = Math.min(step + 1, STATUS_STEPS.length - 1);
+    statusEl.querySelector('.dots').textContent = STATUS_STEPS[step];
+  }, 7000);
+
+  try {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    clearInterval(tick); statusEl.classList.remove('show'); btn.disabled = false;
+    if (!res.ok || data.error) { showError(data.error || "Audit failed."); return; }
+    render(data);
+  } catch (e) {
+    clearInterval(tick); statusEl.classList.remove('show'); btn.disabled = false;
+    showError("Couldn't complete the audit. Please try again.");
+  }
+}
+
+function showError(msg) {
+  reportEl.innerHTML = `<div class="err">${esc(msg)}</div>`;
+  reportEl.classList.add('show');
+}
+
+function money(n){return "$"+n.toLocaleString()}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function render(d) {
+  const r = d.report || {};
+  const ent = d.tier === "enterprise";
+  let h = "";
+
+  // score band
+  h += `<div class="scoreband">
+    <div class="scorenum">${ent ? "—" : esc(d.score)}${ent ? "" : "<small>/10</small>"}</div>
+    <div class="scoremeta">
+      <div class="tier">${esc(d.tier)} tier · ${esc(d.signals.pageCount)}${d.signals.crawlCapped?"+":""} pages${d.signals.hasStore?" · sells online":""}</div>
+      <div class="tname">${esc(d.quote.name)}</div>
+      <div class="tdesc">${esc(TIER_DESC[d.tier]||"")}</div>
+    </div>
+  </div>`;
+
+  // verdict + surfaces (Claude judgment)
+  if (r.summary) h += `<div class="verdict">${esc(r.summary)}</div>`;
+  if (r.surfaces) {
+    h += `<div class="surfaces">
+      <div class="surface"><div class="sname">Google / SEO</div><div class="sbody">${esc(r.surfaces.organic)}</div></div>
+      <div class="surface"><div class="sname">AI Search</div><div class="sbody">${esc(r.surfaces.answer)}</div></div>
+      <div class="surface"><div class="sname">Local / Map</div><div class="sbody">${esc(r.surfaces.local)}</div></div>
+    </div>`;
+  }
+
+  // top quote
+  h += quoteBlock(d, "top");
+
+  // findings
+  if (r.findings && r.findings.length) {
+    h += `<div class="findhead">What the audit found</div>`;
+    for (const f of r.findings) {
+      const lbl = f.priority === "high" ? "Critical" : f.priority === "med" ? "Important" : "Polish";
+      const bk = f.bucket === "agent" ? "Agent does this" : f.bucket === "editorial" ? "Jeremy writes this" : "Needs your sign-off";
+      h += `<div class="finding">
+        <div class="pri ${esc(f.priority)}">${lbl}</div>
+        <div class="fbody">
+          <div class="ftitle">${esc(f.title)}</div>
+          <div class="frec">${esc(f.rec)}</div>
+          <span class="bucket ${esc(f.bucket)}">${bk}</span>
+        </div></div>`;
+    }
+    h += `<p class="note">This is the full list of what the audit surfaced. Every fix here is yours to act on, whether you work with me or not.</p>`;
+  } else if (r.error) {
+    h += `<p class="note">The detailed written analysis didn't generate this run, but the measured findings and quote above are accurate. Try again, or reach out and I'll run it by hand.</p>`;
+  }
+
+  // bottom quote
+  h += quoteBlock(d, "bottom");
+
+  reportEl.innerHTML = h;
+  reportEl.classList.add('show');
+  reportEl.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function quoteBlock(d, pos) {
+  if (d.quote.enterprise) {
+    return `<div class="quote enterprise">
+      <div class="qlab">${pos==="top"?"What it takes to fix":"Let's scope it together"}</div>
+      <div class="qhead">This site is substantial enough to quote personally.</div>
+      <div class="qsub">Sites at this scale get a strategic engagement, not an algorithm's number — a full written strategy and phased implementation, the way I did for the Oregon Coast Aquarium.</div>
+      <a class="ent-cta" href="mailto:jlburkephotos@gmail.com?subject=AI%20Review%20—%20${encodeURIComponent(d.url)}">Book a 20-minute call</a>
+    </div>`;
+  }
+  const rows = d.quote.phases.map(p=>`
+    <div class="phase"><div class="pn">${esc(p.n)}</div>
+      <div class="pwhat">${esc(p.what)}<span class="who">${esc(p.who)}</span></div>
+      <div class="pprice">${money(p.price)}</div></div>`).join("");
+  const lead = pos==="top" ? "Want it done for you?" : "Ready when you are.";
+  const sub = pos==="top"
+    ? "Everything in this report is yours to keep. If you'd rather not spend the next month in your site's settings, I implement it — the agent handles the high-volume data entry, I approve and write everything that needs a human, and nothing goes live without your okay."
+    : `Phases are independent — start with the critical fixes and the photo shoot, see the lift, then continue.`;
+  return `<div class="quote">
+    <div class="qlab">${pos==="top"?"What it takes to fix":"Get it done"}</div>
+    <div class="qhead">${lead}</div>
+    <div class="qsub">${sub}</div>
+    <div class="phases">${rows}</div>
+    <div class="qtotal"><span>Typical full build (${esc(d.quote.typical.join(" + "))})</span><span class="big">${money(d.quote.total)}</span></div>
+    <div class="photo">📷 ${esc(d.quote.photo)}</div>
+  </div>`;
+}
+
+btn.addEventListener('click', run);
+urlIn.addEventListener('keydown', e => { if (e.key === "Enter") run(); });
+</script>
+</body>
+</html>
