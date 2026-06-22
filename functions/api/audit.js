@@ -211,16 +211,19 @@ function analyzeSignals(crawl) {
   const homeTitle = titleMatch ? titleMatch[1].trim() : "";
 
   // --- HIGH-VALUE AEO SIGNALS (these matter most for AI search) ---------
-  const hasFAQSchema = schemaTypes.some(t => /FAQPage|Question/i.test(t));
-  const hasLocalBusiness = schemaTypes.some(t => /LocalBusiness|Restaurant|Store|.*Store$|Place/i.test(t));
-  const hasOrganization = schemaTypes.some(t => /Organization/i.test(t));
+  const schemaTypeList = [...schemaTypes];   // Set -> array (Sets have no .some())
+  const hasFAQSchema = schemaTypeList.some(t => /FAQPage|Question/i.test(t));
+  const hasLocalBusiness = schemaTypeList.some(t => /LocalBusiness|Restaurant|Store|.*Store$|Place/i.test(t));
+  const hasOrganization = schemaTypeList.some(t => /Organization/i.test(t));
   // question-led headings — content AI engines preferentially extract
   const questionHeadings = all.reduce((n, p) =>
     n + (p.html.match(/<h[2-4][^>]*>\s*[^<]*\?\s*<\/h[2-4]>/gi) || []).length, 0);
   // staleness: most recent 4-digit year visible in content vs current year
-  const yearsFound = [...homeRaw.matchAll(/\b(20[12]\d)\b/g)].map(m => +m[1]);
-  const allYears = all.flatMap(p => [...p.html.matchAll(/\b(20[12]\d)\b/g)].map(m => +m[1]));
-  const newestYear = allYears.length ? Math.max(...allYears) : null;
+  let newestYear = null;
+  for (const p of all) {
+    const yrs = p.html.match(/\b(20[12]\d)\b/g);
+    if (yrs) for (const y of yrs) { const n = +y; if (n > (newestYear || 0)) newestYear = n; }
+  }
   const looksStale = newestYear !== null && newestYear <= 2024; // nothing dated 2025+
 
   return {
