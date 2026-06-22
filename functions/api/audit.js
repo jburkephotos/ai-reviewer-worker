@@ -165,9 +165,39 @@ function analyzeSignals(crawl) {
   const hasOG = /property=["']og:/i.test(homeRaw);
   const hasBreadcrumb = all.some(p => /breadcrumb/i.test(p.html));
 
-  // store detection — overrides tier into Large
-  const storeHints = /cdn\.shopify|woocommerce|add-to-cart|"@type"\s*:\s*"product"|\/cart|snipcart|bigcommerce|squarespace-commerce/i;
-  const hasStore = all.some(p => storeHints.test(p.html));
+  // --- COMMERCE: three states, not two ---------------------------------
+  // The old logic treated "WooCommerce installed" as "has a store" and forced Large.
+  // Reality has three states:
+  //   none           — no commerce plumbing at all (brochure)
+  //   installed_empty — commerce platform live but no real products listed (the shelves
+  //                     are built but empty — a HOT opportunity, NOT a Large-tier catalog)
+  //   store          — a real working store with actual products (this is Large)
+  const platformCommerce = all.some(p =>
+    /woocommerce|cdn\.shopify|snipcart|bigcommerce|squarespace-commerce|ecwid/i.test(p.html));
+
+  // count real product evidence — needs actual products, not just the platform being capable
+  let productEvidence = 0;
+  for (const p of all) {
+    const productSchema = (p.html.match(/"@type"\s*:\s*"product"/gi) || []).length;
+    const addToCart = (p.html.match(/add[-_ ]to[-_ ]cart/gi) || []).length;
+    const productLinks = (p.html.match(/\/product\/|\/products\/|\/shop\/[a-z0-9-]+/gi) || []).length;
+    productEvidence += productSchema + addToCart + Math.min(productLinks, 5);
+  }
+  // require clear evidence of a populated catalog to count as a real store.
+  // a couple of stray matches (a /cart link, one button) is NOT a store.
+  const REAL_STORE_THRESHOLD = 4;
+  const hasRealStore = productEvidence >= REAL_STORE_THRESHOLD;
+
+  let commerceState;
+  if (hasRealStore) commerceState = "store";
+  else if (platformCommerce) commerceState = "installed_empty";
+  else commerceState = "none";
+
+  // Only a REAL store overrides tier into Large. Empty-but-installed does NOT.
+  const hasStore = commerceState === "store";
+
+  // Is this a retail/product business? (drives the e-commerce-opportunity finding)
+  const retailHint = /\b(boutique|clothing|apparel|shop|store|gifts?|jewelry|goods|merchandise|prints?|gallery|outfitter|supply)\b/i.test(homeRaw);
 
   // platform
   const platform =
@@ -180,10 +210,25 @@ function analyzeSignals(crawl) {
   const titleMatch = homeRaw.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const homeTitle = titleMatch ? titleMatch[1].trim() : "";
 
+  // --- HIGH-VALUE AEO SIGNALS (these matter most for AI search) ---------
+  const hasFAQSchema = schemaTypes.some(t => /FAQPage|Question/i.test(t));
+  const hasLocalBusiness = schemaTypes.some(t => /LocalBusiness|Restaurant|Store|.*Store$|Place/i.test(t));
+  const hasOrganization = schemaTypes.some(t => /Organization/i.test(t));
+  // question-led headings — content AI engines preferentially extract
+  const questionHeadings = all.reduce((n, p) =>
+    n + (p.html.match(/<h[2-4][^>]*>\s*[^<]*\?\s*<\/h[2-4]>/gi) || []).length, 0);
+  // staleness: most recent 4-digit year visible in content vs current year
+  const yearsFound = [...homeRaw.matchAll(/\b(20[12]\d)\b/g)].map(m => +m[1]);
+  const allYears = all.flatMap(p => [...p.html.matchAll(/\b(20[12]\d)\b/g)].map(m => +m[1]));
+  const newestYear = allYears.length ? Math.max(...allYears) : null;
+  const looksStale = newestYear !== null && newestYear <= 2024; // nothing dated 2025+
+
   return {
     pageCount: all.length,        // note: capped at MAX_PAGES; flagged below if hit cap
     crawlCapped: all.length >= MAX_PAGES,
     hasStore,
+    commerceState,                // "none" | "installed_empty" | "store"
+    retailHint,
     platform,
     isHttps,
     hasViewport,
@@ -192,6 +237,12 @@ function analyzeSignals(crawl) {
     schemaTypes: [...schemaTypes],
     pagesWithSchema,
     pagesWithMeta,
+    hasFAQSchema,
+    hasLocalBusiness,
+    hasOrganization,
+    questionHeadings,
+    newestYear,
+    looksStale,
     homeImgCount: imgs.length,
     homeImgWithAlt: imgsWithAlt,
     homeTitle,
@@ -260,17 +311,58 @@ function buildQuote(tier) {
 }
 
 function deriveScore(s) {
-  // 0–10, higher = healthier. Built from real signals so it's defensible.
-  let pts = 0;
-  if (s.pagesWithSchema > 0) pts += 2.5;
-  if (s.schemaTypes.some(t => /Organization|LocalBusiness/.test(t))) pts += 1;
-  if (s.pagesWithMeta > 0) pts += 1.5;
-  if (s.isHttps) pts += 1;
-  if (s.hasViewport) pts += 1;
-  if (s.hasOG) pts += 1;
-  if (s.hasBreadcrumb) pts += 1;
-  if (s.homeImgCount === 0 || s.homeImgWithAlt / Math.max(1, s.homeImgCount) > 0.7) pts += 1;
-  return Math.max(1, Math.min(10, Math.round(pts)));
+  // Weighted PERCENTAGE (0–100) + letter grade. Weighted hard toward AI-search
+  // readiness, because that's the surface that matters and the one being sold.
+  // Presence of plumbing is NOT enough — the high-value, citable signals carry the
+  // most weight, so a technically-clean but content-empty site lands in the C/D range,
+  // matching reality. Ceiling is capped: nothing without rich citable content hits the 90s.
+
+  let pct = 0;
+
+  // --- AI-SEARCH READINESS (50 pts) — the surface that matters most ---
+  if (s.hasOrganization)   pct += 8;   // entity foundation
+  if (s.hasLocalBusiness)  pct += 10;  // local/map citability
+  if (s.hasFAQSchema)      pct += 16;  // the single highest-value AEO signal
+  if (s.questionHeadings >= 3) pct += 10;
+  else if (s.questionHeadings >= 1) pct += 5;
+  if (s.pagesWithSchema > 0 && s.schemaTypes.length >= 3) pct += 6; // schema depth
+
+  // --- ORGANIC SEO FOUNDATION (28 pts) ---
+  if (s.pagesWithMeta >= s.pageCount * 0.8) pct += 8;
+  else if (s.pagesWithMeta > 0) pct += 4;
+  if (s.homeTitle && s.homeTitle.length >= 15 && !/^home$|^untitled/i.test(s.homeTitle)) pct += 6;
+  if (s.hasBreadcrumb) pct += 6;
+  if (s.homeImgCount === 0 || s.homeImgWithAlt / Math.max(1, s.homeImgCount) >= 0.8) pct += 8;
+
+  // --- TECHNICAL HYGIENE (14 pts) — table stakes, low weight ---
+  if (s.isHttps)     pct += 5;
+  if (s.hasViewport) pct += 5;
+  if (s.hasOG)       pct += 4;
+
+  // --- FRESHNESS / COMPLETENESS (8 pts, can go negative) ---
+  if (!s.looksStale) pct += 5;              // dated 2025+ somewhere = active
+  if (s.commerceState === "installed_empty") pct -= 8; // store built but empty = real gap
+  if (s.commerceState === "store") pct += 3;            // a working catalog is a plus
+
+  // clamp and CAP the ceiling — even a clean site can't claim "done"
+  pct = Math.max(8, Math.min(94, Math.round(pct)));
+
+  return { pct, grade: letterGrade(pct) };
+}
+
+function letterGrade(pct) {
+  if (pct >= 90) return "A";
+  if (pct >= 85) return "A-";
+  if (pct >= 80) return "B+";
+  if (pct >= 75) return "B";
+  if (pct >= 70) return "B-";
+  if (pct >= 65) return "C+";
+  if (pct >= 60) return "C";
+  if (pct >= 55) return "C-";
+  if (pct >= 50) return "D+";
+  if (pct >= 45) return "D";
+  if (pct >= 40) return "D-";
+  return "F";
 }
 
 /* ========================================================================
@@ -318,23 +410,36 @@ Return ONLY valid JSON, no markdown fences, in this exact shape:
   ]
 }
 bucket meaning: agent = mechanical data entry an agent does (schema, meta, alt text); editorial = needs Jeremy's writing/judgment; approve = a structural/destructive change needing owner sign-off.
-Return 6-10 findings, ordered most important first. Do not restate raw counts as findings without an interpretation.`;
+Return 6-10 findings, ordered most important first. Do not restate raw counts as findings without an interpretation.
+
+COMMERCE NUANCE — read the commerceState signal carefully:
+  - "installed_empty" means the business set up a store platform (e.g. WooCommerce) but has NO products listed. This is a HUGE, specific opportunity: the hardest decision (to sell online) is already made, the plumbing is live, but the shelves are empty. Make this a HIGH-priority finding framed as opportunity, not failure — e.g. "Your store is built but has nothing listed — the biggest decision is already made; the work now is stocking it with photography and product pages." Bucket: editorial (this is Jeremy's photography + catalog wheelhouse).
+  - "store" means a real working catalog — normal e-commerce findings apply.
+  - "none" — don't invent a store. If they're clearly retail (retailHint), you may gently note selling online as a future option, low priority.
+
+ETHOS — this report is a gift of knowledge, not a sales trap. The tone throughout: here is exactly what's critical to being found by AI search, laid out plainly enough that the owner could hire anyone to do it, or do it themselves. We share what we've learned because we want Oregon Coast businesses visible to the AI search engines. The offer to do it for them is genuine help, never the only path. Never withhold the "what" — the value IS the complete prescription.`;
 
   const user = `SITE: ${url}
 TIER (already classified by code): ${tier}
-HEALTH SCORE (already computed): ${score}/10
+HEALTH SCORE (already computed): ${score.pct}% (${score.grade})
 
 DETERMINISTIC SIGNALS (ground truth — do not contradict):
 - pages crawled: ${signals.pageCount}${signals.crawlCapped ? " (hit crawl cap; site is larger)" : ""}
 - platform: ${signals.platform}
-- has online store: ${signals.hasStore}
+- commerce state: ${signals.commerceState}${signals.commerceState === "installed_empty" ? " (store platform live but NO products — opportunity!)" : ""}
+- retail business: ${signals.retailHint}
 - HTTPS: ${signals.isHttps}
 - mobile viewport: ${signals.hasViewport}
 - OpenGraph/social tags: ${signals.hasOG}
 - breadcrumbs found: ${signals.hasBreadcrumb}
 - pages with JSON-LD schema: ${signals.pagesWithSchema}/${signals.pageCount}
 - schema @types present: ${signals.schemaTypes.join(", ") || "NONE"}
+- FAQ schema present: ${signals.hasFAQSchema}
+- LocalBusiness schema present: ${signals.hasLocalBusiness}
+- Organization schema present: ${signals.hasOrganization}
+- question-led headings found: ${signals.questionHeadings}
 - pages with a real meta description: ${signals.pagesWithMeta}/${signals.pageCount}
+- newest year referenced on site: ${signals.newestYear || "none found"}${signals.looksStale ? " (looks stale — nothing dated 2025+)" : ""}
 - home page images: ${signals.homeImgCount}, with alt text: ${signals.homeImgWithAlt}
 - home <title>: "${signals.homeTitle}"
 
