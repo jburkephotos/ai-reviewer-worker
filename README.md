@@ -12,14 +12,17 @@ Target: **aireview.jburkephotos.com**
 
 ```
 ai-review-worker/
-├── index.html              ← the public front-end (calls /api/audit)
+├── index.html              ← the public front-end (calls /api/audit, /api/preview, /api/deep, /api/lead)
 └── functions/
     └── api/
-        └── audit.js        ← the audit engine (Cloudflare Pages Function)
+        ├── audit.js        ← summary audit engine (deterministic signals + Claude judgment)
+        ├── preview.js      ← gated "your homepage, rebuilt" preview (brand-aware hero)
+        ├── deep.js         ← gated page-by-page report (one Claude call per page)
+        └── lead.js         ← lead capture (email / KV / log)
 ```
 
-Cloudflare Pages automatically turns anything in `functions/` into serverless routes.
-`functions/api/audit.js` becomes `POST /api/audit`. No separate Worker project needed.
+Cloudflare Pages automatically turns anything in `functions/` into serverless routes —
+e.g. `functions/api/audit.js` becomes `POST /api/audit`. No separate Worker project needed.
 
 ---
 
@@ -30,14 +33,17 @@ Cloudflare Pages automatically turns anything in `functions/` into serverless ro
    coverage, HTTPS, mobile viewport, OpenGraph, breadcrumbs, page count, store detection.
    These drive the **tier** and the **quote**, so they're code, not Claude — exact and
    identical every run. (Tier logic is unit-tested: e-commerce overrides page count into
-   Large; 35+ pages → Enterprise.)
+   Large; 35+ pages → Enterprise.) They also compute the three per-surface scores
+   (Google/SEO · AI Search · Local, 0–100) that power the visual scorecard in the report.
 
 2. **Judgment layer** (Claude, opus-4-8): gets the measured facts + page digests and
    produces what code can't — the three-surface read (Google/SEO · AI Search · Local),
    the prioritized findings, the editorial narrative. The system prompt encodes your
    actual methodology: three surfaces, five hard gates, truth-first / no-invented-facts,
-   anti-slop voice. Each finding is tagged agent / editorial / approve so prospects see
-   your "agent does the data entry, I approve" model right on the page.
+   anti-slop voice. Each finding is a specific, do-it-yourself fix that cites the exact
+   measured signal — the report gives away the complete prescription on purpose. The
+   honesty is the moat: ~3–5% will DIY the list, the other 95% read the real scope of
+   work and hire it out.
 
 If Claude ever fails, the tool still returns the deterministic audit + quote — it never
 errors out on the visitor.
@@ -85,6 +91,10 @@ If the tier or quote ever looks wrong, the bug is in the deterministic layer (au
 ## Cost control (worth knowing)
 - The crawl is capped at 12 pages and Claude only sees 8 page digests (~1,200 chars each),
   so each audit is a small, bounded Claude call. Cheap per run.
+- The two **gated** steps cost more — which is exactly why they sit behind the contact form:
+  `/api/deep` runs one Claude call per page (~10), and `/api/preview` runs one Claude call to
+  write the rebuilt-homepage hero. The free summary stays a single bounded call; the expensive
+  work only runs after someone leaves their details.
 - It's a public tool, so if it ever gets hammered, add a simple rate limit (Cloudflare
   Turnstile on the form, or a KV counter per IP). Not needed at launch; note it for later.
 - Model is set to `claude-opus-4-8` because the report quality IS the product. If you want
@@ -97,6 +107,11 @@ If the tier or quote ever looks wrong, the bug is in the deterministic layer (au
 
 The qualifying form posts to `/api/lead` (`functions/api/lead.js`). It ALWAYS logs each
 submission, so nothing is ever lost. Pick how you want to actually receive them:
+
+> **Also:** once `RESEND_API_KEY` + `LEAD_TO` are set (below), you get a private email copy
+> of **every audit and deep report that runs** — not just form submissions — fired
+> best-effort from `audit.js` / `deep.js`. Your inbox becomes the archive of everything the
+> tool sees, including people who bounce without leaving contact info.
 
 **Recommended — email to your inbox (~5 min):**
 1. Free account at **resend.com**, create an API key.
