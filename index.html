@@ -59,6 +59,62 @@
   .surface .sname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.1em;
     text-transform:uppercase;color:var(--mark);font-weight:600;margin-bottom:8px}
   .surface .sbody{font-size:13.5px;color:rgba(26,29,28,.78)}
+  .meters{display:grid;gap:16px}
+  .meter .mtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .meter .mname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mark);font-weight:600}
+  .meter .mval{font-size:15px;font-weight:700}
+  .meter .mval small{font-size:11px;opacity:.5;font-weight:400}
+  .mtrack{height:9px;background:var(--fog-deep);border-radius:5px;overflow:hidden}
+  .mfill{height:100%;border-radius:5px}
+  .meter .mread{font-size:13.5px;color:rgba(26,29,28,.72);margin-top:6px}
+  .checklist{display:grid;grid-template-columns:1fr 1fr;gap:9px 22px;border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
+  .ck{display:flex;align-items:center;gap:9px;font-size:14px}
+  .ck .ico{font-weight:700;font-size:14px;width:15px;text-align:center;flex:none}
+  .ck .ico.pass{color:var(--kelp)} .ck .ico.warn{color:var(--warn)} .ck .ico.fail{color:var(--bad)}
+  .ck .ckval{margin-left:auto;font-size:12px;color:rgba(26,29,28,.5)}
+  .proofcap{font-size:14px;color:rgba(26,29,28,.7);margin-bottom:14px;max-width:62ch}
+  .proofgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .proofcol{border:1px solid var(--line);border-radius:3px;padding:14px 16px}
+  .proofcol.before{background:rgba(196,188,168,.16)}
+  .proofcol.after{background:rgba(47,74,62,.08);border-left:3px solid var(--kelp)}
+  .proofcol .plabel{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:10px}
+  .proofcol.before .plabel{color:rgba(26,29,28,.55)}
+  .proofcol.after .plabel{color:var(--kelp)}
+  .proofcol ul{list-style:none;display:grid;gap:7px;font-size:13.5px}
+  .proofcol li{padding-left:18px;position:relative;color:rgba(26,29,28,.8)}
+  .proofcol.before li::before{content:"–";position:absolute;left:3px;color:rgba(26,29,28,.4)}
+  .proofcol.after li::before{content:"✓";position:absolute;left:0;color:var(--kelp);font-weight:700}
+  .proofcta{display:inline-block;margin-top:16px;font-family:"SF Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;color:var(--paper);background:var(--ink);padding:11px 20px;border-radius:2px;text-decoration:none}
+  .proofcta:hover{background:var(--mark)}
+  @media(max-width:620px){.proofgrid{grid-template-columns:1fr}}
+  #preview{margin-top:30px}
+  .pvlab{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mark);font-weight:600;margin-bottom:4px}
+  .pvhead{font-size:21px;font-weight:700;margin-bottom:2px}
+  .pvsub{font-size:13.5px;color:rgba(26,29,28,.62);margin-bottom:14px;max-width:62ch}
+  .pvframe{background:#fff;border:1px solid rgba(26,29,28,.18);border-radius:7px;overflow:hidden;box-shadow:0 14px 34px -20px rgba(26,29,28,.45)}
+  .pvbar{background:#eceae3;border-bottom:1px solid rgba(26,29,28,.12);padding:8px 12px;display:flex;align-items:center;gap:7px}
+  .pvbar i{width:10px;height:10px;border-radius:50%;background:#d6d3c9;display:inline-block}
+  .pvurl{margin-left:10px;font-family:"SF Mono",ui-monospace,monospace;font-size:11px;color:rgba(26,29,28,.45)}
+  .pvnav{padding:13px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(0,0,0,.05)}
+  .pvname{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .pvlinks{display:flex;align-items:center;gap:14px;font-family:"SF Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;flex-wrap:wrap;justify-content:flex-end}
+  .pvhero{display:grid;grid-template-columns:1.05fr .95fr;min-height:220px}
+  .pvheroL{padding:30px 24px;display:flex;flex-direction:column;justify-content:center}
+  .pveyebrow{font-family:"SF Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin-bottom:11px}
+  .pvtitle{font-size:29px;line-height:1.09;font-weight:700;letter-spacing:-.01em;margin-bottom:11px}
+  .pvtext{font-size:13.5px;line-height:1.5;margin-bottom:18px;max-width:36ch}
+  .pvbtns{display:flex;gap:10px;flex-wrap:wrap}
+  .pvbtn{padding:9px 16px;border-radius:3px;font-family:"SF Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+  .pvheroR{position:relative;display:flex;align-items:flex-end;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 14px,transparent 14px 28px)}
+  .pvphoto{position:relative;margin:14px;font-family:"SF Mono",ui-monospace,monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.4);padding:7px 11px;border-radius:3px}
+  .pvchips{display:flex;border-top:1px solid rgba(0,0,0,.06);font-size:12px}
+  .pvchip{flex:1;padding:10px 8px;text-align:center;border-right:1px solid rgba(0,0,0,.05)}
+  .pvchip:last-child{border-right:none}
+  .pvdirs{display:flex;align-items:center;gap:9px;margin-top:14px;flex-wrap:wrap}
+  .pvdirs .dlab{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:rgba(26,29,28,.5)}
+  .pvdir{border:1px solid rgba(26,29,28,.25);color:rgba(26,29,28,.7);padding:6px 14px;border-radius:20px;font-size:12px}
+  .pvdir.sel{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+  @media(max-width:620px){.pvhero{grid-template-columns:1fr}.pvheroR{min-height:130px}}
   .quote{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--mark);
     border-radius:3px;padding:22px 26px;margin:22px 0}
   .quote.enterprise{border-left-color:var(--tide)}
@@ -142,7 +198,7 @@
   footer.foot strong{color:var(--ink)}
   @media(max-width:620px){.surfaces{grid-template-columns:1fr}.inrow{flex-direction:column}
     .scoreband{grid-template-columns:1fr;gap:12px}.finding{grid-template-columns:1fr;gap:4px}
-    .phase{grid-template-columns:1fr auto}.phase .pn{grid-column:1/-1}}
+    .phase{grid-template-columns:1fr auto}.phase .pn{grid-column:1/-1}.checklist{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -221,15 +277,152 @@ function showError(msg) {
 function money(n){return "$"+n.toLocaleString()}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
+// score band color by overall % — reads on the dark band
+function gradeColor(pct){
+  if (pct == null) return "var(--mark-soft)";
+  if (pct < 50) return "#e2735a";
+  if (pct < 65) return "#e0a45a";
+  if (pct < 80) return "#8fb89a";
+  return "#7fd0a8";
+}
+// meter fill color by that surface's own 0–100 score
+function meterColor(v){
+  if (v < 40) return "var(--bad)";
+  if (v < 70) return "var(--warn)";
+  return "var(--kelp)";
+}
+function scorecard(d, r){
+  const surf = (d.score && d.score.surfaces) || {};
+  const reads = r.surfaces || {};
+  const rows = [
+    { name:"Google / SEO", v: surf.organic, read: reads.organic },
+    { name:"AI Search · ChatGPT / Perplexity", v: surf.answer, read: reads.answer },
+    { name:"Local / Map pack", v: surf.local, read: reads.local },
+  ];
+  let m = `<div class="panel"><h2>Where you show up · 3 surfaces</h2><div class="meters">`;
+  for (const row of rows){
+    const v = Math.max(0, Math.min(100, Math.round(row.v || 0)));
+    m += `<div class="meter">
+      <div class="mtop"><span class="mname">${esc(row.name)}</span><span class="mval" style="${v<40?"color:var(--bad)":""}">${v}<small>/100</small></span></div>
+      <div class="mtrack"><div class="mfill" style="width:${v}%;background:${meterColor(v)}"></div></div>
+      ${row.read ? `<div class="mread">${esc(row.read)}</div>` : ""}
+    </div>`;
+  }
+  m += `</div>${checklist(d.signals || {})}</div>`;
+  return m;
+}
+function checklist(s){
+  const metaRatio = s.pagesWithMeta / Math.max(1, s.pageCount);
+  const altRatio  = s.homeImgCount === 0 ? 1 : s.homeImgWithAlt / Math.max(1, s.homeImgCount);
+  const schemaLen = (s.schemaTypes || []).length;
+  const goodTitle = s.homeTitle && s.homeTitle.length >= 15 && !/^home$|^untitled/i.test(s.homeTitle);
+  const items = [
+    ck("Structured data (schema)", s.pagesWithSchema > 0 ? (schemaLen >= 3 ? "pass" : "warn") : "fail", s.pagesWithSchema > 0 ? `${s.pagesWithSchema}/${s.pageCount} pages` : "Missing"),
+    ck("FAQ / answer schema", s.hasFAQSchema ? "pass" : "fail", s.hasFAQSchema ? "Present" : "Missing"),
+    ck("LocalBusiness schema", s.hasLocalBusiness ? "pass" : "fail", s.hasLocalBusiness ? "Present" : "Missing"),
+    ck("Meta descriptions", metaRatio >= 0.8 ? "pass" : metaRatio > 0 ? "warn" : "fail", `${s.pagesWithMeta}/${s.pageCount}`),
+    ck("Image alt text", altRatio >= 0.8 ? "pass" : altRatio > 0 ? "warn" : "fail", s.homeImgCount ? `${Math.round(altRatio*100)}%` : "none"),
+    ck("Page title", goodTitle ? "pass" : "warn", goodTitle ? "Specific" : "Generic"),
+    ck("HTTPS secure", s.isHttps ? "pass" : "fail", s.isHttps ? "Yes" : "No"),
+    ck("Mobile ready", s.hasViewport ? "pass" : "fail", s.hasViewport ? "Yes" : "No"),
+    ck("Open Graph tags", s.hasOG ? "pass" : "fail", s.hasOG ? "Present" : "Missing"),
+    ck("Breadcrumbs", s.hasBreadcrumb ? "pass" : "fail", s.hasBreadcrumb ? "Present" : "Missing"),
+  ];
+  return `<div class="checklist">${items.join("")}</div>`;
+}
+function ck(label, state, val){
+  const sym = state === "pass" ? "✓" : state === "warn" ? "!" : "✕";
+  return `<div class="ck"><span class="ico ${state}">${sym}</span>${esc(label)}<span class="ckval">${esc(val)}</span></div>`;
+}
+// Proof band — a real rebuild, shown between the problem and the price (builds desire + trust)
+function proofBand(){
+  return `<div class="panel proof"><h2>Proof · a site we rebuilt</h2>
+    <div class="proofcap">Same business, same address — rebuilt off WordPress into something that loads instantly and that AI search can actually read.</div>
+    <div class="proofgrid">
+      <div class="proofcol before"><div class="plabel">Before · WordPress</div><ul>
+        <li>Slow to load, heavy with plugins</li>
+        <li>Little or no structured data — invisible to AI</li>
+        <li>Monthly hosting bills and update nags</li>
+        <li>You're renting it</li></ul></div>
+      <div class="proofcol after"><div class="plabel">After · static rebuild</div><ul>
+        <li>Loads instantly — static, served on Cloudflare</li>
+        <li>Full schema: Organization, Restaurant, Menu, FAQ, Breadcrumbs</li>
+        <li>Near-zero hosting cost</li>
+        <li>You own every file</li></ul></div>
+    </div>
+    <a class="proofcta" href="https://thenewportcafe.com" target="_blank" rel="noopener">See it live — The Newport Cafe ↗</a>
+  </div>`;
+}
+
+// Gated "your homepage, rebuilt" preview — generated from the visitor's own brand
+function hostOf(u){ try { return new URL(u).host; } catch { return u; } }
+function hexLighten(hex, amt){
+  try {
+    let h = String(hex).replace('#','');
+    if (h.length === 3) h = h.split('').map(c=>c+c).join('');
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+    const m = c => Math.round(c + (255-c)*amt);
+    return `rgb(${m(r)},${m(g)},${m(b)})`;
+  } catch { return hex; }
+}
+async function runPreview(url){
+  let host = document.getElementById('preview');
+  if (!host){ host = document.createElement('div'); host.id='preview'; document.getElementById('report').appendChild(host); }
+  host.innerHTML = `<div class="deepwait"><span class="dots">Designing your homepage preview</span></div>`;
+  try {
+    const res = await fetch('/api/preview', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ url }) });
+    const data = await res.json();
+    if (!res.ok || data.error){ host.innerHTML = ""; return; }
+    renderPreview(host, data);
+    host.scrollIntoView({ behavior:"smooth", block:"start" });
+  } catch { host.innerHTML = ""; }
+}
+function renderPreview(host, d){
+  const p = d.palette || {};
+  const bg = p.bg || "#15333a", accent = p.accent || "#c2562b", paper = p.paper || "#f4f2ec";
+  const light = "rgba(244,242,236,.75)";
+  const photoBg = hexLighten(bg, 0.16);
+  const ctas = d.ctas && d.ctas.length ? d.ctas : ["View the menu","Find us"];
+  const badges = (d.badges || []).slice(0,3);
+  const navlinks = ["Menu","Story","Visit"].map(l=>`<span>${esc(l)}</span>`).join("") +
+    `<span style="background:${accent};color:#fff;padding:6px 13px;border-radius:3px">Order ahead</span>`;
+  const btns = `<span class="pvbtn" style="background:${accent};color:#fff">${esc(ctas[0])}</span>` +
+    (ctas[1] ? `<span class="pvbtn" style="border:1px solid ${light};color:${paper}">${esc(ctas[1])}</span>` : "");
+  const chips = badges.length ? `<div class="pvchips">${badges.map(b=>`<div class="pvchip" style="color:${bg}">${esc(b)}</div>`).join("")}</div>` : "";
+  const dirs = ["Coastal modern","Classic editorial","Bold & bright"];
+  const dirchips = dirs.map((t,i)=>`<span class="pvdir${i===0?' sel':''}">${esc(t)}</span>`).join("");
+  host.innerHTML = `
+    <div class="pvlab">Preview · your homepage, rebuilt</div>
+    <div class="pvhead">Here's ${esc(d.name || "your site")}, rebuilt.</div>
+    <div class="pvsub">Generated from your own site — your name, your words, your colors. One of three directions; nothing's locked, it's a starting point we shape together.</div>
+    <div class="pvframe">
+      <div class="pvbar"><i></i><i></i><i></i><span class="pvurl">${esc(hostOf(d.url))}</span></div>
+      <div class="pvnav" style="background:${paper}"><span class="pvname" style="color:${bg}">${esc(d.name || "Your Business")}</span><span class="pvlinks" style="color:${bg}">${navlinks}</span></div>
+      <div class="pvhero">
+        <div class="pvheroL" style="background:${bg};color:${paper}">
+          ${d.eyebrow ? `<div class="pveyebrow" style="color:${accent}">${esc(d.eyebrow)}</div>` : ""}
+          <div class="pvtitle">${esc(d.headline || d.name || "")}</div>
+          <div class="pvtext" style="color:${light}">${esc(d.subhead || "")}</div>
+          <div class="pvbtns">${btns}</div>
+        </div>
+        <div class="pvheroR" style="background:${photoBg}"><div class="pvphoto">📷 Your photography — shot in session one</div></div>
+      </div>
+      ${chips}
+    </div>
+    <div class="pvdirs"><span class="dlab">Try a direction:</span>${dirchips}</div>
+  `;
+}
+
 function render(d) {
   const r = d.report || {};
   const ent = d.tier === "enterprise";
   let h = "";
 
-  // score band
+  // score band (color-coded by grade)
   const sc = d.score || {};
+  const sCol = ent ? "var(--tide)" : gradeColor(sc.pct);
   h += `<div class="scoreband">
-    <div class="scorenum">${ent ? "—" : esc(sc.grade)}${ent ? "" : `<small>${esc(sc.pct)}%</small>`}</div>
+    <div class="scorenum" style="color:${sCol}">${ent ? "—" : esc(sc.grade)}${ent ? "" : `<small>${esc(sc.pct)}%</small>`}</div>
     <div class="scoremeta">
       <div class="tier">${esc(d.tier)} tier · ${esc(d.signals.pageCount)}${d.signals.crawlCapped?"+":""} pages${d.signals.commerceState==="store"?" · sells online":d.signals.commerceState==="installed_empty"?" · store set up, not stocked":""}</div>
       <div class="tname">${esc(d.quote.name)}</div>
@@ -237,31 +430,22 @@ function render(d) {
     </div>
   </div>`;
 
-  // verdict + surfaces (Claude judgment)
+  // verdict (Claude judgment)
   if (r.summary) h += `<div class="verdict">${esc(r.summary)}</div>`;
-  if (r.surfaces) {
-    h += `<div class="surfaces">
-      <div class="surface"><div class="sname">Google / SEO</div><div class="sbody">${esc(r.surfaces.organic)}</div></div>
-      <div class="surface"><div class="sname">AI Search</div><div class="sbody">${esc(r.surfaces.answer)}</div></div>
-      <div class="surface"><div class="sname">Local / Map</div><div class="sbody">${esc(r.surfaces.local)}</div></div>
-    </div>`;
-  }
 
-  // top quote
-  h += quoteBlock(d, "top");
+  // visual scorecard — per-surface meters (deterministic scores + Claude's read) + pass/fail checklist
+  h += scorecard(d, r);
 
   // findings
   if (r.findings && r.findings.length) {
     h += `<div class="findhead">What the audit found</div>`;
     for (const f of r.findings) {
       const lbl = f.priority === "high" ? "Critical" : f.priority === "med" ? "Important" : "Polish";
-      const bk = f.bucket === "agent" ? "Agent does this" : f.bucket === "editorial" ? "Jeremy writes this" : "Needs your sign-off";
       h += `<div class="finding">
         <div class="pri ${esc(f.priority)}">${lbl}</div>
         <div class="fbody">
           <div class="ftitle">${esc(f.title)}</div>
           <div class="frec">${esc(f.rec)}</div>
-          <span class="bucket ${esc(f.bucket)}">${bk}</span>
         </div></div>`;
     }
     h += `<p class="note">This is the full list of what the audit surfaced. Every fix here is yours to act on, whether you work with me or not.</p>`;
@@ -269,8 +453,11 @@ function render(d) {
     h += `<p class="note">The detailed written analysis didn't generate this run, but the measured findings and quote above are accurate. Try again, or reach out and I'll run it by hand.</p>`;
   }
 
-  // bottom quote
-  h += quoteBlock(d, "bottom");
+  // desire layer: proof we can deliver, placed between the problem and the price
+  h += proofBand();
+
+  // the single quote — placed AFTER the findings + proof, once they've felt the problem
+  h += quoteBlock(d, "top");
 
   // deep-report qualifying form (the gate to the full page-by-page report)
   h += deepReportForm(d);
@@ -340,9 +527,10 @@ function wireDeepForm(d) {
         })
       });
       if (res.ok) {
-        msg.innerHTML = "Got it — building your full page-by-page report now. This takes a minute…";
+        msg.innerHTML = "Got it — building your homepage preview and full page-by-page report now…";
         msg.className = "ffmsg good";
         document.getElementById('f_submit').disabled = true;
+        runPreview(d.url);
         runDeepReport(d.url);
       } else {
         msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";
@@ -400,12 +588,10 @@ function renderDeep(host, data) {
       <div class="pagehead"><span class="ppath">${esc(path)}</span>${pg.role?`<span class="prole">${esc(pg.role)}</span>`:""}</div>`;
     for (const f of pg.findings) {
       const lbl = f.priority === "high" ? "Critical" : f.priority === "med" ? "Important" : "Polish";
-      const bk = f.bucket === "agent" ? "Agent does this" : f.bucket === "editorial" ? "Jeremy writes this" : "Needs your sign-off";
       h += `<div class="finding">
         <div class="pri ${esc(f.priority)}">${lbl}</div>
         <div class="fbody"><div class="ftitle">${esc(f.title)}</div>
-        <div class="frec">${esc(f.rec)}</div>
-        <span class="bucket ${esc(f.bucket)}">${bk}</span></div></div>`;
+        <div class="frec">${esc(f.rec)}</div></div></div>`;
     }
     h += `</div>`;
   }
