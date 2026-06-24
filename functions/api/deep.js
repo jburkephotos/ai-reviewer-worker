@@ -15,7 +15,8 @@ const FETCH_TIMEOUT_MS = 12000;
 const CLAUDE_MODEL = "claude-opus-4-8";
 const PER_PAGE_TOKENS = 1100;
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   try {
     if (!env.ANTHROPIC_API_KEY) {
       return json({ error: "Report engine isn't configured yet." }, 500);
@@ -42,12 +43,19 @@ export async function onRequestPost({ request, env }) {
       overall = "";
     }
 
-    return json({
+    const payload = {
       url: clean,
       overall,
       pages: ok,
       crawledPages: crawl.pages.map(p => p.url),
-    });
+    };
+
+    // Jeremy gets a copy of every deep report that runs (private, best-effort).
+    if (env.RESEND_API_KEY && env.LEAD_TO && context.waitUntil) {
+      context.waitUntil(emailOwnerDeep(env, payload).catch(() => {}));
+    }
+
+    return json(payload);
   } catch (e) {
     return json({ error: "Couldn't build the deep report.", detail: String(e) }, 500);
   }
@@ -78,7 +86,7 @@ Return ONLY valid JSON, no fences:
 {
   "role": "what this page is for, 4-7 words (e.g. 'Homepage — first impression & navigation')",
   "findings": [
-    { "priority":"high|med|low", "title":"specific finding about THIS page", "rec":"the fix, one sentence", "bucket":"agent|editorial|approve" }
+    { "priority":"high|med|low", "title":"specific finding about THIS page", "rec":"the specific, do-it-yourself fix for THIS page — name the element and the concrete change, citing the measured fact (the actual title, the missing schema @type). Concrete enough to act on with no further research. 1-2 sentences." }
   ]
 }
 2-5 findings for this page. If the page is genuinely clean, it's fine to return 1 finding or note a strength as a low-priority item. Order most important first.`;
@@ -176,6 +184,38 @@ async function fetchText(u) {
     return await r.text();
   } catch { clearTimeout(t); return null; }
 }
+
+/* ---- owner notification: Jeremy gets every deep report (private, best-effort) ---- */
+async function emailOwnerDeep(env, d) {
+  const pagesHtml = (d.pages || []).filter(p => p.findings && p.findings.length).map(p => {
+    let path; try { path = new URL(p.url).pathname || "/"; } catch { path = p.url; }
+    const fs = p.findings.map(f =>
+      `<li style="margin:3px 0"><span style="color:${priColor(f.priority)};font:600 11px monospace;text-transform:uppercase">${priLabel(f.priority)}</span> <strong>${escHtml(f.title)}</strong> — <span style="color:#555">${escHtml(f.rec)}</span></li>`).join("");
+    return `<div style="margin:14px 0"><div style="font:700 14px monospace;color:#d4622a">${escHtml(path)} <span style="font-weight:400;color:#888;font-style:italic">${escHtml(p.role || "")}</span></div><ul style="margin:6px 0;padding-left:18px;font-size:14px">${fs}</ul></div>`;
+  }).join("");
+
+  const html = `<div style="font-family:Georgia,serif;max-width:680px;color:#1a1d1c">
+    <h2 style="margin:0 0 2px">AI Review — DEEP report</h2>
+    <p style="margin:0 0 14px;color:#666">${escHtml(d.url)}</p>
+    ${d.overall ? `<p style="font-size:14px;background:#f4f2ec;padding:12px 14px;border-left:3px solid #2f4a3e;margin:0 0 8px">${escHtml(d.overall)}</p>` : ""}
+    ${pagesHtml}
+  </div>`;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${env.RESEND_API_KEY}` },
+    body: JSON.stringify({
+      from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>",
+      to: [env.LEAD_TO],
+      subject: `AI Review DEEP — ${safeHost(d.url)}`,
+      html,
+    }),
+  });
+}
+function safeHost(u){ try { return new URL(u).host; } catch { return u; } }
+function escHtml(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function priColor(p){ return p === "high" ? "#c0492a" : p === "med" ? "#c9952f" : "#4a6b5b"; }
+function priLabel(p){ return p === "high" ? "Critical" : p === "med" ? "Important" : "Polish"; }
 
 function isAsset(p){return /\.(png|jpe?g|gif|webp|svg|css|js|pdf|zip|mp4|woff2?|ico)(\?|$)/i.test(p);}
 function stripToText(html){return html.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();}

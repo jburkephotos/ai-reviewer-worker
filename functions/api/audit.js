@@ -20,7 +20,8 @@ const MAX_PAGES = 12;          // crawl budget — keeps cost + time bounded
 const FETCH_TIMEOUT_MS = 12000;
 const CLAUDE_MODEL = "claude-opus-4-8";   // the report is the product — use the strong model
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   try {
     const { url } = await request.json();
     const clean = normalizeUrl(url);
@@ -37,6 +38,7 @@ export async function onRequestPost({ request, env }) {
     const tier = classify(signals.pageCount, signals.hasStore);
     const quote = buildQuote(tier);
     const score = deriveScore(signals);
+    score.surfaces = surfaceScores(signals);   // per-surface 0–100 for the visual scorecard
 
     // --- 3. CLAUDE JUDGMENT LAYER --------------------------------------
     let report = null;
@@ -47,7 +49,7 @@ export async function onRequestPost({ request, env }) {
       report = { error: "judgment_unavailable", detail: String(e) };
     }
 
-    return json({
+    const payload = {
       url: clean,
       tier,
       score,
@@ -55,7 +57,15 @@ export async function onRequestPost({ request, env }) {
       quote,
       report,           // { summary, surfaces:{organic,answer,local}, findings:[...] }
       crawledPages: crawl.pages.map(p => p.url),
-    });
+    };
+
+    // Notify Jeremy of EVERY audit run (private — reuses the lead Resend setup).
+    // Fire-and-forget via waitUntil so the visitor's response is never delayed.
+    if (env.RESEND_API_KEY && env.LEAD_TO && context.waitUntil) {
+      context.waitUntil(emailOwnerSummary(env, payload).catch(() => {}));
+    }
+
+    return json(payload);
   } catch (e) {
     return json({ error: "Something went wrong running the audit.", detail: String(e) }, 500);
   }
@@ -409,11 +419,11 @@ Return ONLY valid JSON, no markdown fences, in this exact shape:
     "local":   "1-2 sentences on local/map readiness"
   },
   "findings": [
-    { "priority": "high|med|low", "title": "short plain finding", "rec": "what to do about it, one sentence", "bucket": "agent|editorial|approve" }
+    { "priority": "high|med|low", "title": "short plain finding", "rec": "the specific, do-it-yourself fix — name the exact page/element and the concrete change, citing the measured fact (the actual current <title>, the missing schema @type, the page with no meta description). Concrete enough that a competent person could do it with no further research. 1-2 sentences." }
   ]
 }
-bucket meaning: agent = mechanical data entry an agent does (schema, meta, alt text); editorial = needs Jeremy's writing/judgment; approve = a structural/destructive change needing owner sign-off.
 Return 6-10 findings, ordered most important first. Do not restate raw counts as findings without an interpretation.
+Every rec must be executable and specific to THIS site — a skilled owner could act on it directly, or hand it to anyone. That completeness is the whole point: the report's value is the full, honest prescription, given freely.
 
 COMMERCE NUANCE — read the commerceState signal carefully:
   - "installed_empty" means the business set up a store platform (e.g. WooCommerce) but has NO products listed. This is a HUGE, specific opportunity: the hardest decision (to sell online) is already made, the plumbing is live, but the shelves are empty. Make this a HIGH-priority finding framed as opportunity, not failure — e.g. "Your store is built but has nothing listed — the biggest decision is already made; the work now is stocking it with photography and product pages." Bucket: editorial (this is Jeremy's photography + catalog wheelhouse).
@@ -458,7 +468,7 @@ ${pageDigests}`;
     },
     body: JSON.stringify({
       model: CLAUDE_MODEL,
-      max_tokens: 2000,
+      max_tokens: 2600,
       system,
       messages: [{ role: "user", content: user }],
     }),
@@ -481,6 +491,83 @@ function stripToText(html) {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/* ========================================================================
+   PER-SURFACE SCORES (0–100) — deterministic, from the same measured signals
+   that drive deriveScore. These power the three visual meters in the report.
+   Honest range: a site with no schema SHOULD show AI Search near zero — that
+   gap is the point. Not clamped to a floor like the overall score.
+   ===================================================================== */
+function surfaceScores(s) {
+  const clamp = n => Math.max(0, Math.min(100, Math.round(n)));
+
+  // AI / answer search — schema, FAQ markup, entity, question-led content
+  let answer = 0;
+  if (s.pagesWithSchema > 0)        answer += 18;
+  if (s.hasOrganization)            answer += 16;
+  if (s.hasFAQSchema)               answer += 30;
+  if (s.questionHeadings >= 3)      answer += 18;
+  else if (s.questionHeadings >= 1) answer += 9;
+  if (s.schemaTypes.length >= 3)    answer += 18;
+
+  // Organic / Google SEO — titles, meta, alt text, breadcrumbs, hygiene
+  let organic = 0;
+  organic += (s.pagesWithMeta / Math.max(1, s.pageCount)) * 30;
+  if (s.homeTitle && s.homeTitle.length >= 15 && !/^home$|^untitled/i.test(s.homeTitle)) organic += 22;
+  organic += (s.homeImgCount === 0 ? 1 : s.homeImgWithAlt / s.homeImgCount) * 18;
+  if (s.hasBreadcrumb) organic += 14;
+  if (s.isHttps)       organic += 8;
+  if (s.hasViewport)   organic += 8;
+
+  // Local / map — LocalBusiness schema, entity, social/OG, freshness
+  let local = 0;
+  if (s.hasLocalBusiness) local += 45;
+  if (s.hasOrganization)  local += 20;
+  if (s.hasOG)            local += 12;
+  if (s.hasBreadcrumb)    local += 8;
+  if (!s.looksStale)      local += 15;
+
+  return { organic: clamp(organic), answer: clamp(answer), local: clamp(local) };
+}
+
+/* ========================================================================
+   OWNER NOTIFICATION — Jeremy gets a copy of every audit that runs.
+   Private (to LEAD_TO), reuses the Resend setup from lead.js. Best-effort.
+   ===================================================================== */
+async function emailOwnerSummary(env, d) {
+  const sc = d.score || {};
+  const surf = sc.surfaces || {};
+  const sig = d.signals || {};
+  const findings = (d.report && d.report.findings) || [];
+  const rows = findings.map(f =>
+    `<tr><td style="padding:6px 10px;vertical-align:top;color:${priColor(f.priority)};font:600 11px/1.4 monospace;text-transform:uppercase;white-space:nowrap">${priLabel(f.priority)}</td>` +
+    `<td style="padding:6px 10px"><strong>${escHtml(f.title)}</strong><br><span style="color:#555">${escHtml(f.rec)}</span></td></tr>`).join("");
+
+  const html = `<div style="font-family:Georgia,serif;max-width:660px;color:#1a1d1c">
+    <h2 style="margin:0 0 2px">AI Review — audit run</h2>
+    <p style="margin:0 0 14px;color:#666">${escHtml(d.url)}</p>
+    <p style="font-size:15px;margin:0 0 10px"><strong>${escHtml(d.tier)} tier</strong> · grade <strong>${escHtml(sc.grade || "")}</strong> (${escHtml(String(sc.pct == null ? "" : sc.pct))}%) · ${escHtml(String(sig.pageCount || "?"))} pages · ${escHtml(sig.platform || "")}</p>
+    <p style="font-size:14px;margin:0 0 16px;color:#333">Google/SEO <strong>${Math.round(surf.organic || 0)}</strong> · AI Search <strong>${Math.round(surf.answer || 0)}</strong> · Local <strong>${Math.round(surf.local || 0)}</strong> <span style="color:#888">(/100)</span></p>
+    ${d.report && d.report.summary ? `<p style="font-size:14px;background:#f4f2ec;padding:12px 14px;border-left:3px solid #2f4a3e;margin:0 0 16px">${escHtml(d.report.summary)}</p>` : ""}
+    <table style="border-collapse:collapse;font-size:14px;width:100%">${rows}</table>
+  </div>`;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${env.RESEND_API_KEY}` },
+    body: JSON.stringify({
+      from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>",
+      to: [env.LEAD_TO],
+      subject: `AI Review run — ${safeHost(d.url)} — ${sc.grade || ""} (${d.tier})`,
+      html,
+    }),
+  });
+}
+
+function safeHost(u) { try { return new URL(u).host; } catch { return u; } }
+function escHtml(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function priColor(p) { return p === "high" ? "#c0492a" : p === "med" ? "#c9952f" : "#4a6b5b"; }
+function priLabel(p) { return p === "high" ? "Critical" : p === "med" ? "Important" : "Polish"; }
 
 function normalizeUrl(u) {
   if (!u || typeof u !== "string") return null;
