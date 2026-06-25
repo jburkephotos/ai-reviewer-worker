@@ -377,7 +377,10 @@ function proofBand(){
   </div>`;
 }
 
-// Gated "your homepage, rebuilt" preview — generated from the visitor's own brand
+// Rebuilt-homepage preview renderer — NO LONGER auto-fired in the public funnel.
+// Replaced by the free one-off mockup OFFER (the checkbox in the lead form); Jeremy
+// builds those by hand. Kept here as the reference template for those mockups + the
+// first Starter Kit skin. runPreview() is intentionally unused by the live flow.
 function hostOf(u){ try { return new URL(u).host; } catch { return u; } }
 function hexLighten(hex, amt){
   try {
@@ -494,9 +497,9 @@ function render(d) {
 function deepReportForm(d) {
   if (d.quote.enterprise) return ""; // enterprise routes to a call instead
   return `<div class="deepform" id="deepform">
-    <div class="qlab">The full report</div>
-    <div class="qhead">Want the complete, page-by-page breakdown?</div>
-    <div class="qsub">What you see above is the summary, and it's already yours to keep. Want the complete page-by-page breakdown — every page on your site, every fix, the exact structured data? Leave your details and I'll send it over and follow up personally. We share what we've learned because we want Oregon Coast businesses found and cited by the AI search engines. You can hand the report to anyone, do it yourself, or have us do it with you. Either way, the knowledge is yours.</div>
+    <div class="qlab">Your full report + a free homepage redesign</div>
+    <div class="qhead">Want the full breakdown — and to see your homepage reimagined?</div>
+    <div class="qsub">What you see above is the summary, and it's yours to keep. Leave your details and I'll send the complete page-by-page report — every page, every fix, the exact structured data. And if you'd like, I'll personally mock up a new version of your homepage so you can see it — free, no obligation, yours to keep whether you do it yourself, hand it to someone else, or work with me. I share what I've learned because I want Oregon Coast businesses found and cited by AI search.</div>
     <div class="ff">
       <div class="ffrow">
         <label>First name<input type="text" id="f_name" autocomplete="given-name"></label>
@@ -515,7 +518,8 @@ function deepReportForm(d) {
           <button type="button" data-v="Not sure yet">Not sure yet</button>
         </div>
       </div>
-      <button class="run ffsubmit" id="f_submit">Send me the full report</button>
+      <label class="ffcheck" style="display:flex;align-items:center;gap:9px;text-transform:none;letter-spacing:0;font-family:inherit;font-size:14px;color:var(--paper);cursor:pointer"><input type="checkbox" id="f_mockup" checked style="width:auto;margin:0;flex:none;accent-color:#d4622a"> Yes — design me a free homepage mockup</label>
+      <button class="run ffsubmit" id="f_submit">Send my report + homepage redesign</button>
       <div class="ffmsg" id="f_msg"></div>
     </div>
   </div>`;
@@ -547,13 +551,16 @@ function wireDeepForm(d) {
           works: document.getElementById('f_works').value.trim(),
           broken: document.getElementById('f_broken').value.trim(),
           budget,
+          mockup: document.getElementById('f_mockup').checked,
         })
       });
       if (res.ok) {
-        msg.innerHTML = "Got it — building your homepage preview and full page-by-page report now…";
+        const wantsMockup = document.getElementById('f_mockup').checked;
+        msg.innerHTML = wantsMockup
+          ? "Got it — building your full page-by-page report now, and I'll personally design your homepage mockup and email it over."
+          : "Got it — building your full page-by-page report now. This takes a minute…";
         msg.className = "ffmsg good";
         document.getElementById('f_submit').disabled = true;
-        runPreview(d.url);
         runDeepReport(d.url);
       } else {
         msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";

@@ -16,7 +16,7 @@ ai-review-worker/
 └── functions/
     └── api/
         ├── audit.js        ← summary audit engine (deterministic signals + Claude judgment)
-        ├── preview.js      ← gated "your homepage, rebuilt" preview (brand-aware hero)
+        ├── preview.js      ← rebuilt-homepage hero generator (NOT auto-fired — Jeremy's draft tool; the public funnel offers a free hand-built mockup instead)
         ├── deep.js         ← gated page-by-page report (one Claude call per page)
         └── lead.js         ← lead capture (email / KV / log)
 ```
@@ -91,10 +91,10 @@ If the tier or quote ever looks wrong, the bug is in the deterministic layer (au
 ## Cost control (worth knowing)
 - The crawl is capped at 12 pages and Claude only sees 8 page digests (~1,200 chars each),
   so each audit is a small, bounded Claude call. Cheap per run.
-- The two **gated** steps cost more — which is exactly why they sit behind the contact form:
-  `/api/deep` runs one Claude call per page (~10), and `/api/preview` runs one Claude call to
-  write the rebuilt-homepage hero. The free summary stays a single bounded call; the expensive
-  work only runs after someone leaves their details.
+- The gated `/api/deep` step costs more (one Claude call per page, ~10) — which is why it sits
+  behind the contact form. The free summary stays a single bounded call. `/api/preview` is no
+  longer auto-fired; the funnel offers a free hand-built homepage mockup instead (lead form
+  checkbox → flagged in your lead email), which you produce manually.
 - It's a public tool, so if it ever gets hammered, add a simple rate limit (Cloudflare
   Turnstile on the form, or a KV counter per IP). Not needed at launch; note it for later.
 - Model is set to `claude-opus-4-8` because the report quality IS the product. If you want
