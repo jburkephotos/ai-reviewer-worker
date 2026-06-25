@@ -38,6 +38,7 @@ export async function onRequestPost({ request, env }) {
     works: String(lead.works || "").slice(0, 1000),
     broken: String(lead.broken || "").slice(0, 1000),
     budget: String(lead.budget || "").slice(0, 60),
+    mockup: !!lead.mockup,
   };
 
   // Always log — guarantees the lead is never silently lost.
@@ -66,6 +67,7 @@ export async function onRequestPost({ request, env }) {
         `Site:     ${record.url}`,
         `Tier:     ${record.tier}    Score: ${scoreStr}`,
         `Budget:   ${record.budget}`,
+        `Mockup:   ${record.mockup ? "YES — wants a free homepage mockup" : "no"}`,
         ``,
         `What's working:`,
         record.works || "(blank)",
@@ -84,7 +86,7 @@ export async function onRequestPost({ request, env }) {
           from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>",
           to: [env.LEAD_TO],
           reply_to: record.email,
-          subject: `AI Review lead — ${record.business || record.name} (${record.tier})`,
+          subject: `${record.mockup ? "🎨 MOCKUP — " : ""}AI Review lead — ${record.business || record.name} (${record.tier})`,
           text: body,
         }),
       });
