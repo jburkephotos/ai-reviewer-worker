@@ -18,6 +18,7 @@ ai-review-worker/
         ├── audit.js        ← summary audit engine (deterministic signals + Claude judgment)
         ├── preview.js      ← rebuilt-homepage hero generator (NOT auto-fired — Jeremy's draft tool; the public funnel offers a free hand-built mockup instead)
         ├── deep.js         ← gated page-by-page report (one Claude call per page)
+        ├── page.js         ← single-page audit — one URL → that page's findings (on-demand)
         └── lead.js         ← lead capture (email / KV / log)
 ```
 

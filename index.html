@@ -196,6 +196,8 @@
   .ffmsg{font-size:13px;font-family:"SF Mono",ui-monospace,monospace;min-height:18px}
   .ffmsg.good{color:#9fd0b8}
   .ffmsg.warn{color:#e8a07a}
+  .pt-hint{font-size:13.5px;color:rgba(26,29,28,.6);margin-bottom:14px;max-width:60ch}
+  #pt_result{margin-top:18px}
   #deepreport{margin-top:28px}
   .deepwait{font-family:"SF Mono",ui-monospace,monospace;font-size:14px;color:var(--kelp);
     padding:24px;background:var(--paper);border:1px solid var(--line);border-radius:3px;text-align:center}
@@ -294,10 +296,11 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","
 // score band color by overall % — reads on the dark band
 function gradeColor(pct){
   if (pct == null) return "var(--mark-soft)";
-  if (pct < 50) return "#e2735a";
-  if (pct < 65) return "#e0a45a";
-  if (pct < 80) return "#8fb89a";
-  return "#7fd0a8";
+  if (pct < 60) return "#e2735a";   // F
+  if (pct < 70) return "#e0935a";   // D
+  if (pct < 80) return "#e0c05a";   // C
+  if (pct < 90) return "#8fb89a";   // B
+  return "#7fd0a8";                  // A
 }
 // meter fill color by that surface's own 0–100 score
 function meterColor(v){
@@ -333,7 +336,7 @@ function checklist(s){
   const items = [
     ck("Structured data (schema)", s.pagesWithSchema > 0 ? (schemaLen >= 3 ? "pass" : "warn") : "fail", s.pagesWithSchema > 0 ? `${s.pagesWithSchema}/${s.pageCount} pages` : "Missing"),
     ck("FAQ / answer schema", s.hasFAQSchema ? "pass" : "fail", s.hasFAQSchema ? "Present" : "Missing"),
-    ck("LocalBusiness schema", s.hasLocalBusiness ? "pass" : "fail", s.hasLocalBusiness ? "Present" : "Missing"),
+    ck("LocalBusiness + geo", s.completeLocalEntity ? "pass" : (s.hasLocalBusiness ? "warn" : "fail"), s.completeLocalEntity ? "Complete" : (s.hasLocalBusiness ? "No geo" : "Missing")),
     ck("Meta descriptions", metaRatio >= 0.8 ? "pass" : metaRatio > 0 ? "warn" : "fail", `${s.pagesWithMeta}/${s.pageCount}`),
     ck("Image alt text", altRatio >= 0.8 ? "pass" : altRatio > 0 ? "warn" : "fail", s.homeImgCount ? `${Math.round(altRatio*100)}%` : "none"),
     ck("Page title", goodTitle ? "pass" : "warn", goodTitle ? "Specific" : "Generic"),
@@ -487,11 +490,64 @@ function render(d) {
 
   // deep-report qualifying form (the gate to the full page-by-page report)
   h += deepReportForm(d);
+  h += singlePageTool();
 
   reportEl.innerHTML = h;
   reportEl.classList.add('show');
   reportEl.scrollIntoView({ behavior:"smooth", block:"start" });
   wireDeepForm(d);
+  wirePageTool();
+}
+
+// Single-page tool — paste any URL, run the lightweight per-page analyzer on just that page
+function singlePageTool(){
+  return `<div class="panel" id="pagetool">
+    <h2>Audit one specific page</h2>
+    <p class="pt-hint">The report above covers your main pages. Paste any single URL — including ones the crawl skipped — for a focused, page-level check.</p>
+    <div class="inrow">
+      <input type="text" id="pt_url" placeholder="yoursite.com/a-specific-page" autocomplete="off" spellcheck="false">
+      <button class="run" id="pt_btn">Check this page</button>
+    </div>
+    <div id="pt_result"></div>
+  </div>`;
+}
+function wirePageTool(){
+  const btn = document.getElementById('pt_btn');
+  const input = document.getElementById('pt_url');
+  const result = document.getElementById('pt_result');
+  if (!btn) return;
+  async function go(){
+    const url = input.value.trim();
+    if (!url){ input.focus(); return; }
+    btn.disabled = true;
+    result.innerHTML = `<div class="deepwait"><span class="dots">Reading that page</span></div>`;
+    try {
+      const res = await fetch('/api/page', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ url }) });
+      const data = await res.json();
+      btn.disabled = false;
+      if (!res.ok || data.error){ result.innerHTML = `<div class="err">${esc(data.error || "Couldn't audit that page.")}</div>`; return; }
+      renderPageResult(result, data);
+    } catch {
+      btn.disabled = false;
+      result.innerHTML = `<div class="err">Couldn't reach the page auditor. Please try again.</div>`;
+    }
+  }
+  btn.addEventListener('click', go);
+  input.addEventListener('keydown', e => { if (e.key === "Enter") go(); });
+}
+function renderPageResult(host, d){
+  let path; try { path = new URL(d.url).pathname || "/"; } catch { path = d.url; }
+  let h = `<div class="pageblock"><div class="pagehead"><span class="ppath">${esc(path)}</span>${d.role?`<span class="prole">${esc(d.role)}</span>`:""}</div>`;
+  if (!d.findings || !d.findings.length){
+    h += `<p class="note">This page looks clean — nothing major surfaced.</p>`;
+  } else {
+    for (const f of d.findings){
+      const lbl = f.priority === "high" ? "Critical" : f.priority === "med" ? "Important" : "Polish";
+      h += `<div class="finding"><div class="pri ${esc(f.priority)}">${lbl}</div><div class="fbody"><div class="ftitle">${esc(f.title)}</div><div class="frec">${esc(f.rec)}</div></div></div>`;
+    }
+  }
+  h += `</div>`;
+  host.innerHTML = h;
 }
 
 function deepReportForm(d) {
