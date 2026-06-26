@@ -223,8 +223,15 @@ function analyzeSignals(crawl) {
   // --- HIGH-VALUE AEO SIGNALS (these matter most for AI search) ---------
   const schemaTypeList = [...schemaTypes];   // Set -> array (Sets have no .some())
   const hasFAQSchema = schemaTypeList.some(t => /FAQPage|Question/i.test(t));
-  const hasLocalBusiness = schemaTypeList.some(t => /LocalBusiness|Restaurant|Store|.*Store$|Place/i.test(t));
+  // LocalBusiness AND its common subtypes — Hotel/Motel/Lodging/Restaurant/etc. ARE LocalBusinesses
+  const hasLocalBusiness = schemaTypeList.some(t => /LocalBusiness|Restaurant|FoodEstablishment|Cafe|CafeOrCoffeeShop|Bar|Bakery|Brewery|Winery|Distillery|Store|.*Store$|Shop|Hotel|Motel|Lodging|Resort|BedAndBreakfast|Spa|DaySpa|BeautySalon|HairSalon|NailSalon|HealthAndBeauty|MedicalBusiness|Dentist|Physician|Hospital|VeterinaryCare|ProfessionalService|LegalService|Attorney|Notary|FinancialService|InsuranceAgency|AccountingService|RealEstateAgent|AutomotiveBusiness|AutoRepair|HomeAndConstructionBusiness|GeneralContractor|Plumber|Electrician|RoofingContractor|Locksmith|MovingCompany|TravelAgency|TouristAttraction|Place/i.test(t));
   const hasOrganization = schemaTypeList.some(t => /Organization/i.test(t));
+  // geo coordinates anywhere in the JSON-LD = a LOCATABLE entity (what AI needs to place a local business)
+  const hasGeo = all.some(p => /"geo"\s*:|GeoCoordinates/i.test(p.html));
+  // a COMPLETE local entity = a recognized local type WITH geo coordinates
+  const completeLocalEntity = hasLocalBusiness && hasGeo;
+  // entity graph intact = a complete local entity OR an Organization node (a hard gate for AEO)
+  const hasEntityGraph = completeLocalEntity || hasOrganization;
   // question-led headings — content AI engines preferentially extract
   const questionHeadings = all.reduce((n, p) =>
     n + (p.html.match(/<h[2-4][^>]*>\s*[^<]*\?\s*<\/h[2-4]>/gi) || []).length, 0);
@@ -252,6 +259,9 @@ function analyzeSignals(crawl) {
     pagesWithMeta,
     hasFAQSchema,
     hasLocalBusiness,
+    hasGeo,
+    completeLocalEntity,
+    hasEntityGraph,
     hasOrganization,
     questionHeadings,
     newestYear,
@@ -333,8 +343,8 @@ function deriveScore(s) {
   let pct = 0;
 
   // --- AI-SEARCH READINESS (50 pts) — the surface that matters most ---
-  if (s.hasOrganization)   pct += 8;   // entity foundation
-  if (s.hasLocalBusiness)  pct += 10;  // local/map citability
+  if (s.hasOrganization)    pct += 8;   // entity foundation
+  if (s.completeLocalEntity) pct += 10; // a LOCATABLE entity (local type + geo) — what AI actually cites
   if (s.hasFAQSchema)      pct += 16;  // the single highest-value AEO signal
   if (s.questionHeadings >= 3) pct += 10;
   else if (s.questionHeadings >= 1) pct += 5;
@@ -357,6 +367,10 @@ function deriveScore(s) {
   if (s.commerceState === "installed_empty") pct -= 8; // store built but empty = real gap
   if (s.commerceState === "store") pct += 3;            // a working catalog is a plus
 
+  // HARD GATE: with no complete locatable entity (local type + geo) AND no Organization node,
+  // an AI engine can't confidently cite the business — so it can't earn a B (cap in the C band).
+  if (!s.hasEntityGraph) pct = Math.min(pct, 79);
+
   // clamp and CAP the ceiling — even a clean site can't claim "done"
   pct = Math.max(8, Math.min(94, Math.round(pct)));
 
@@ -364,17 +378,11 @@ function deriveScore(s) {
 }
 
 function letterGrade(pct) {
+  // standard scale: A 90+, B 80–89, C 70–79, D 60–69, F below 60
   if (pct >= 90) return "A";
-  if (pct >= 85) return "A-";
-  if (pct >= 80) return "B+";
-  if (pct >= 75) return "B";
-  if (pct >= 70) return "B-";
-  if (pct >= 65) return "C+";
-  if (pct >= 60) return "C";
-  if (pct >= 55) return "C-";
-  if (pct >= 50) return "D+";
-  if (pct >= 45) return "D";
-  if (pct >= 40) return "D-";
+  if (pct >= 80) return "B";
+  if (pct >= 70) return "C";
+  if (pct >= 60) return "D";
   return "F";
 }
 
@@ -448,7 +456,9 @@ DETERMINISTIC SIGNALS (ground truth — do not contradict):
 - pages with JSON-LD schema: ${signals.pagesWithSchema}/${signals.pageCount}
 - schema @types present: ${signals.schemaTypes.join(", ") || "NONE"}
 - FAQ schema present: ${signals.hasFAQSchema}
-- LocalBusiness schema present: ${signals.hasLocalBusiness}
+- LocalBusiness/local-entity schema type present: ${signals.hasLocalBusiness}
+- geo coordinates present (a locatable entity): ${signals.hasGeo}
+- COMPLETE local entity (recognized type + geo): ${signals.completeLocalEntity}
 - Organization schema present: ${signals.hasOrganization}
 - question-led headings found: ${signals.questionHeadings}
 - pages with a real meta description: ${signals.pagesWithMeta}/${signals.pageCount}
@@ -521,11 +531,12 @@ function surfaceScores(s) {
 
   // Local / map — LocalBusiness schema, entity, social/OG, freshness
   let local = 0;
-  if (s.hasLocalBusiness) local += 45;
-  if (s.hasOrganization)  local += 20;
-  if (s.hasOG)            local += 12;
-  if (s.hasBreadcrumb)    local += 8;
-  if (!s.looksStale)      local += 15;
+  if (s.completeLocalEntity)   local += 45;  // recognized local type WITH geo = locatable
+  else if (s.hasLocalBusiness) local += 20;  // has the type but no geo coordinates = partial
+  if (s.hasOrganization)       local += 18;
+  if (s.hasOG)                 local += 12;
+  if (s.hasBreadcrumb)         local += 8;
+  if (!s.looksStale)           local += 12;
 
   return { organic: clamp(organic), answer: clamp(answer), local: clamp(local) };
 }
