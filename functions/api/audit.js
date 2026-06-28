@@ -297,8 +297,8 @@ const TIER_DEFS = {
   small: {
     name: "Small site",
     phases: [
-      { n: "Phase 1", price: 1000, what: "Critical fixes: structured data, titles, meta descriptions, alt text, breadcrumbs", who: "Agent does the data entry · you approve" },
-      { n: "Phase 2", price: 1000, what: "AI-search content + finishing: FAQ schema, key copy reworked, layout & performance tidied", who: "Written by Jeremy · agent-assisted" },
+      { n: "Phase 1", price: 1000, what: "A full redesign + every critical fix — a fast, modern site with structured data, titles, meta and alt text done right", who: "Agent does the heavy lifting · you approve" },
+      { n: "Phase 2", price: 1000, what: "Deeper AI-search work: FAQ schema, copy rewritten for citability, finishing touches", who: "Scoped after we re-audit Phase 1" },
     ],
     typical: ["Phase 1", "Phase 2"],
     photo: "Includes a hero photo shoot — 5 images, a $1,500 value, built into Phase 1.",
@@ -306,7 +306,7 @@ const TIER_DEFS = {
   medium: {
     name: "Medium site",
     phases: [
-      { n: "Phase 1", price: 1500, what: "Critical fixes across all pages: schema, metadata, alt text, breadcrumbs", who: "Agent does the data entry · you approve" },
+      { n: "Phase 1", price: 1500, what: "A full redesign + critical fixes on every page — fast and modern, with schema, metadata and alt text done right", who: "Agent does the heavy lifting · you approve" },
       { n: "Phase 2", price: 2000, what: "AI-search content: FAQ schema, page restructuring, copy reworked for citability", who: "Written by Jeremy" },
       { n: "Phase 3", price: 1500, what: "UX, navigation, plugins, performance, ongoing marketing plan", who: "Agent-assisted" },
     ],
@@ -316,7 +316,7 @@ const TIER_DEFS = {
   large: {
     name: "Large / e-commerce site",
     phases: [
-      { n: "Phase 1", price: 2500, what: "Critical + catalog fixes: org & product schema, per-product metadata and alt text, breadcrumbs", who: "Agent does the high-volume data entry · you approve" },
+      { n: "Phase 1", price: 2500, what: "A full redesign + critical & catalog fixes — org/product schema, per-product metadata, alt text, breadcrumbs", who: "Agent does the high-volume data entry · you approve" },
       { n: "Phase 2", price: 4500, what: "AI-search content: FAQ schema, category & landing rewrites, citable copy throughout", who: "Written by Jeremy" },
       { n: "Phase 3", price: 2500, what: "Full UX/nav rebuild, plugin stack, performance, conversion + marketing strategy", who: "Agent-assisted" },
     ],
@@ -546,32 +546,113 @@ function surfaceScores(s) {
    Private (to LEAD_TO), reuses the Resend setup from lead.js. Best-effort.
    ===================================================================== */
 async function emailOwnerSummary(env, d) {
-  const sc = d.score || {};
-  const surf = sc.surfaces || {};
-  const sig = d.signals || {};
-  const findings = (d.report && d.report.findings) || [];
-  const rows = findings.map(f =>
-    `<tr><td style="padding:6px 10px;vertical-align:top;color:${priColor(f.priority)};font:600 11px/1.4 monospace;text-transform:uppercase;white-space:nowrap">${priLabel(f.priority)}</td>` +
-    `<td style="padding:6px 10px"><strong>${escHtml(f.title)}</strong><br><span style="color:#555">${escHtml(f.rec)}</span></td></tr>`).join("");
+  const html = emailShell(d.url, emailScorecard(d) + emailFindings(d.report) + emailPhase1(d));
+  await sendEmail(env, `AI Review — ${safeHost(d.url)} — ${(d.score && d.score.grade) || ""} (${d.tier})`, html);
+}
 
-  const html = `<div style="font-family:Georgia,serif;max-width:660px;color:#1a1d1c">
-    <h2 style="margin:0 0 2px">AI Review — audit run</h2>
-    <p style="margin:0 0 14px;color:#666">${escHtml(d.url)}</p>
-    <p style="font-size:15px;margin:0 0 10px"><strong>${escHtml(d.tier)} tier</strong> · grade <strong>${escHtml(sc.grade || "")}</strong> (${escHtml(String(sc.pct == null ? "" : sc.pct))}%) · ${escHtml(String(sig.pageCount || "?"))} pages · ${escHtml(sig.platform || "")}</p>
-    <p style="font-size:14px;margin:0 0 16px;color:#333">Google/SEO <strong>${Math.round(surf.organic || 0)}</strong> · AI Search <strong>${Math.round(surf.answer || 0)}</strong> · Local <strong>${Math.round(surf.local || 0)}</strong> <span style="color:#888">(/100)</span></p>
-    ${d.report && d.report.summary ? `<p style="font-size:14px;background:#f4f2ec;padding:12px 14px;border-left:3px solid #2f4a3e;margin:0 0 16px">${escHtml(d.report.summary)}</p>` : ""}
-    <table style="border-collapse:collapse;font-size:14px;width:100%">${rows}</table>
-  </div>`;
-
+/* ========================================================================
+   BRANDED EMAIL BUILDERS (email-safe: tables + inline styles + bgcolor, no JS).
+   Shared shape with deep.js so the summary and deep-report emails match the tool.
+   ===================================================================== */
+const EMAIL_TIER_DESC = {
+  small: "A brochure site — a few pages, no online store. Fast to fix, big visible lift.",
+  medium: "A real multi-page site — services or content, not yet selling online.",
+  large: "A substantial site or online store — catalog, many pages, transactions to protect.",
+  enterprise: "35+ pages, deep navigation, multiple audiences — a destination or institution.",
+};
+function gradeColorEmail(pct) {
+  if (pct == null) return "#e8a07a";
+  if (pct < 60) return "#e2735a";
+  if (pct < 70) return "#e0935a";
+  if (pct < 80) return "#e0c05a";
+  if (pct < 90) return "#8fb89a";
+  return "#7fd0a8";
+}
+function meterColorEmail(v) { return v < 40 ? "#c0492a" : v < 70 ? "#c9952f" : "#2f4a3e"; }
+function emailBar(name, val, read) {
+  const v = Math.max(0, Math.min(100, Math.round(val || 0)));
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px"><tr><td>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font:600 11px monospace;letter-spacing:1px;text-transform:uppercase;color:#d4622a">${escHtml(name)}</td>
+      <td align="right" style="font:700 15px Georgia,serif;color:${v < 40 ? "#c0492a" : "#1a1d1c"}">${v}<span style="font:400 11px Georgia,serif;color:#aaa">/100</span></td>
+    </tr></table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:5px 0 0"><tr>
+      <td bgcolor="#d6d3c9" style="border-radius:5px;font-size:0;line-height:0">
+        <table width="${v}%" cellpadding="0" cellspacing="0"><tr><td bgcolor="${meterColorEmail(v)}" height="9" style="height:9px;border-radius:5px;font-size:0;line-height:0">&nbsp;</td></tr></table>
+      </td>
+    </tr></table>
+    ${read ? `<div style="font:400 13px Georgia,serif;color:#555;margin:5px 0 0">${escHtml(read)}</div>` : ""}
+  </td></tr></table>`;
+}
+function emailScorecard(d) {
+  const sc = d.score || {}, surf = sc.surfaces || {}, sig = d.signals || {}, r = d.report || {}, reads = r.surfaces || {};
+  const ent = d.quote && d.quote.enterprise;
+  const gcol = ent ? "#9fc3d4" : gradeColorEmail(sc.pct);
+  const band = `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#1a1d1c" style="border-radius:4px;margin:0 0 16px"><tr>
+    <td width="118" align="center" valign="middle" style="padding:22px 16px 22px 24px">
+      <div style="font:700 52px Georgia,serif;color:${gcol};line-height:1">${ent ? "&mdash;" : escHtml(sc.grade || "")}</div>
+      ${ent ? "" : `<div style="font:400 15px Georgia,serif;color:rgba(244,242,236,.5);margin:4px 0 0">${escHtml(String(sc.pct == null ? "" : sc.pct))}%</div>`}
+    </td>
+    <td valign="middle" style="padding:22px 24px 22px 0">
+      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#e8a07a;margin:0 0 6px">${escHtml(d.tier)} tier &middot; ${escHtml(String(sig.pageCount || "?"))} pages</div>
+      <div style="font:700 21px Georgia,serif;color:#f4f2ec;margin:0 0 5px">${escHtml((d.quote && d.quote.name) || "")}</div>
+      <div style="font:400 13px Georgia,serif;color:rgba(244,242,236,.72)">${escHtml(EMAIL_TIER_DESC[d.tier] || "")}</div>
+    </td></tr></table>`;
+  const verdict = r.summary ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:0 0 18px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(r.summary)}</td></tr></table>` : "";
+  const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up &middot; 3 surfaces</div>` +
+    emailBar("Google / SEO", surf.organic, reads.organic) +
+    emailBar("AI Search · ChatGPT / Perplexity", surf.answer, reads.answer) +
+    emailBar("Local / Map pack", surf.local, reads.local);
+  return band + verdict + bars;
+}
+function emailFindings(report) {
+  const f = (report && report.findings) || [];
+  if (!f.length) return "";
+  const rows = f.map(x => `<tr>
+    <td valign="top" style="padding:9px 12px 9px 0;white-space:nowrap;font:700 10px monospace;letter-spacing:1px;text-transform:uppercase;color:${priColor(x.priority)}">${priLabel(x.priority)}</td>
+    <td valign="top" style="padding:9px 0;border-bottom:1px solid #e2dfd6"><div style="font:600 15px Georgia,serif;color:#1a1d1c">${escHtml(x.title)}</div><div style="font:400 14px Georgia,serif;color:#555;margin:2px 0 0">${escHtml(x.rec)}</div></td>
+  </tr>`).join("");
+  return `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;border-bottom:1px solid #d6d3c9;padding:0 0 8px;margin:26px 0 6px">What the audit found</div>
+    <table width="100%" cellpadding="0" cellspacing="0">${rows}</table>`;
+}
+function emailPhase1(d) {
+  const q = d.quote || {};
+  const cta = `mailto:jlburkephotos@gmail.com?subject=AI%20Review%20%E2%80%94%20${encodeURIComponent(d.url || "")}`;
+  if (q.enterprise) {
+    return `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border:1px solid #d6d3c9;border-radius:3px;margin:24px 0 0"><tr><td style="padding:20px 24px;border-left:4px solid #3a5a6b">
+      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#3a5a6b;margin:0 0 8px">Let's scope it together</div>
+      <div style="font:700 20px Georgia,serif;color:#1a1d1c;margin:0 0 6px">This site's substantial enough to plan personally.</div>
+      <div style="font:400 14px/1.5 Georgia,serif;color:#555;margin:0 0 16px">A site at this scale gets a written strategy and phased implementation — the way I did the Oregon Coast Aquarium.</div>
+      <a href="${cta}" style="background:#3a5a6b;color:#fff;text-decoration:none;font:600 12px monospace;letter-spacing:1px;text-transform:uppercase;padding:11px 22px;border-radius:2px">Book a 20-minute call</a>
+    </td></tr></table>`;
+  }
+  const p1 = (q.phases && q.phases[0]) || {};
+  return `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border:1px solid #d6d3c9;border-radius:3px;margin:24px 0 0"><tr><td style="padding:22px 24px;border-left:4px solid #d4622a">
+    <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#d4622a;margin:0 0 8px">Where to start</div>
+    <div style="font:700 21px Georgia,serif;color:#1a1d1c;margin:0 0 8px">Phase 1 — a redesigned, AI-ready site</div>
+    <div style="font:400 14px/1.5 Georgia,serif;color:#444;margin:0 0 16px">${escHtml(p1.what || "")}</div>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td valign="middle" style="font:700 26px Georgia,serif;color:#1a1d1c">$${(p1.price || 0).toLocaleString()}</td>
+      <td valign="middle" align="right"><a href="${cta}" style="background:#1a1d1c;color:#f4f2ec;text-decoration:none;font:600 12px monospace;letter-spacing:1px;text-transform:uppercase;padding:12px 24px;border-radius:2px">Let's talk &rarr;</a></td>
+    </tr></table>
+    ${q.photo ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0"><tr><td bgcolor="#eef1ec" style="border-radius:2px;padding:10px 13px;font:400 13px Georgia,serif;color:#2f4a3e">&#128247; ${escHtml(q.photo)}</td></tr></table>` : ""}
+    <div style="font:italic 13px Georgia,serif;color:#777;margin:14px 0 0">Then we re-run your audit, show the jump, and scope the rest — the deeper AEO content and growth work — only if you want it.</div>
+  </td></tr></table>`;
+}
+function emailShell(url, inner) {
+  return `<div style="background:#e8e6df;padding:24px 0;font-family:Georgia,serif"><table align="center" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto"><tr><td style="padding:0 24px">
+    <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#d4622a;margin:0 0 4px">J. Burke Photos &middot; Discoverability</div>
+    <div style="font:700 34px Georgia,serif;color:#1a1d1c;border-bottom:2px solid #1a1d1c;padding:0 0 14px">AI Review</div>
+    <div style="font:400 13px Georgia,serif;color:#666;margin:12px 0 22px">${escHtml(url)}</div>
+    ${inner}
+    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like ChatGPT and Perplexity — and exactly what it takes to fix it. Yours to keep.</div>
+  </td></tr></table></div>`;
+}
+async function sendEmail(env, subject, html) {
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${env.RESEND_API_KEY}` },
-    body: JSON.stringify({
-      from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>",
-      to: [env.LEAD_TO],
-      subject: `AI Review run — ${safeHost(d.url)} — ${sc.grade || ""} (${d.tier})`,
-      html,
-    }),
+    body: JSON.stringify({ from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>", to: [env.LEAD_TO], subject, html }),
   });
 }
 
