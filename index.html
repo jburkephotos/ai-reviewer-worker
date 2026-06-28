@@ -148,6 +148,13 @@
   .qtotal{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;
     padding-top:14px;border-top:2px solid var(--ink);font-weight:700}
   .qtotal .big{font-size:22px}
+  .phase-hero{border-top:none}
+  .phase-hero .pprice{font-size:21px}
+  .qnext{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .qnextlab{display:block;font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,29,28,.5);margin-bottom:10px}
+  .qnextrow{display:flex;gap:12px;align-items:baseline;padding:5px 0;font-size:14px;color:rgba(26,29,28,.72)}
+  .qnextrow .qnextn{font-family:"SF Mono",ui-monospace,monospace;font-size:12px;font-weight:600;color:rgba(26,29,28,.5);white-space:nowrap}
+  .qnextnote{font-size:13px;font-style:italic;color:rgba(26,29,28,.6);margin-top:10px}
   .photo{font-size:13px;color:var(--kelp);margin-top:12px;padding:11px 14px;
     background:rgba(47,74,62,.07);border-radius:2px}
   .ent-cta{display:inline-block;margin-top:8px;background:var(--tide);color:#fff;text-decoration:none;
@@ -617,7 +624,7 @@ function wireDeepForm(d) {
           : "Got it — building your full page-by-page report now. This takes a minute…";
         msg.className = "ffmsg good";
         document.getElementById('f_submit').disabled = true;
-        runDeepReport(d.url);
+        runDeepReport(d);
       } else {
         msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";
         msg.className = "ffmsg warn";
@@ -629,7 +636,8 @@ function wireDeepForm(d) {
   });
 }
 
-async function runDeepReport(url) {
+async function runDeepReport(d) {
+  const url = d.url;
   let host = document.getElementById('deepreport');
   if (!host) {
     host = document.createElement('div');
@@ -647,7 +655,7 @@ async function runDeepReport(url) {
   try {
     const res = await fetch('/api/deep', {
       method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url, ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
     });
     const data = await res.json();
     clearInterval(tick);
@@ -694,21 +702,22 @@ function quoteBlock(d, pos) {
       <a class="ent-cta" href="mailto:jlburkephotos@gmail.com?subject=AI%20Review%20—%20${encodeURIComponent(d.url)}">Book a 20-minute call</a>
     </div>`;
   }
-  const rows = d.quote.phases.map(p=>`
-    <div class="phase"><div class="pn">${esc(p.n)}</div>
-      <div class="pwhat">${esc(p.what)}<span class="who">${esc(p.who)}</span></div>
-      <div class="pprice">${money(p.price)}</div></div>`).join("");
-  const lead = pos==="top" ? "Want it done for you?" : "Ready when you are.";
-  const sub = pos==="top"
-    ? "Everything in this report is yours to keep. If you'd rather not spend the next month in your site's settings, I implement it — the agent handles the high-volume data entry, I approve and write everything that needs a human, and nothing goes live without your okay."
-    : `Phases are independent — start with the critical fixes and the photo shoot, see the lift, then continue.`;
+  const p1 = d.quote.phases[0];
+  const later = d.quote.phases.slice(1);
+  const laterHtml = later.length ? `<div class="qnext">
+    <span class="qnextlab">Then, after we prove Phase 1</span>
+    ${later.map(p=>`<div class="qnextrow"><span class="qnextn">${esc(p.n)}</span><span>${esc(p.what)}</span></div>`).join("")}
+    <div class="qnextnote">We re-run your audit, show the jump, and quote the rest — only if you want it.</div>
+  </div>` : "";
   return `<div class="quote">
-    <div class="qlab">${pos==="top"?"What it takes to fix":"Get it done"}</div>
-    <div class="qhead">${lead}</div>
-    <div class="qsub">${sub}</div>
-    <div class="phases">${rows}</div>
-    <div class="qtotal"><span>Typical full build (${esc(d.quote.typical.join(" + "))})</span><span class="big">${money(d.quote.total)}</span></div>
-    <div class="photo">📷 ${esc(d.quote.photo)}</div>
+    <div class="qlab">Where to start</div>
+    <div class="qhead">Phase 1 — a redesigned, AI-ready site.</div>
+    <div class="qsub">Everything in this report is yours to keep. If you'd rather not spend the next month in your site's settings, I do Phase 1 for you — the redesign plus every critical fix — and nothing goes live without your okay.</div>
+    <div class="phases"><div class="phase phase-hero"><div class="pn">${esc(p1.n)}</div>
+      <div class="pwhat">${esc(p1.what)}<span class="who">${esc(p1.who)}</span></div>
+      <div class="pprice">${money(p1.price)}</div></div></div>
+    ${d.quote.photo?`<div class="photo">📷 ${esc(d.quote.photo)}</div>`:""}
+    ${laterHtml}
   </div>`;
 }
 
