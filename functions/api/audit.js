@@ -80,6 +80,14 @@ async function crawlSite(rootUrl) {
   const queue = [rootUrl];
   const pages = [];
 
+  // Seed from the sitemap too — many modern sites render their nav with JavaScript, so the
+  // raw HTML has no internal links and link-following alone would stop at the homepage.
+  try {
+    for (const u of await sitemapUrls(root.origin)) {
+      try { const lu = new URL(u); if (lu.origin === root.origin && !isAsset(lu.pathname) && !queue.includes(lu.href)) queue.push(lu.href); } catch {}
+    }
+  } catch {}
+
   while (queue.length && pages.length < MAX_PAGES) {
     const u = queue.shift();
     if (seen.has(u)) continue;
@@ -121,6 +129,38 @@ async function fetchText(u) {
     clearTimeout(t);
     return null;
   }
+}
+
+// like fetchText but without the text/html filter — sitemaps are XML
+async function fetchAny(u) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(u, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (AI-Review audit; jburkephotos.com)" }, cf: { cacheTtl: 300 } });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    return await r.text();
+  } catch { clearTimeout(t); return null; }
+}
+
+// Enumerate page URLs from the site's sitemap — covers JS-nav sites that expose no links in HTML.
+async function sitemapUrls(origin) {
+  let xml = null;
+  for (const p of ["/sitemap_index.xml", "/wp-sitemap.xml", "/sitemap.xml"]) {
+    const x = await fetchAny(origin + p);
+    if (x && /<(urlset|sitemapindex)/i.test(x)) { xml = x; break; }
+  }
+  if (!xml) return [];
+  const locs = s => [...s.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map(m => m[1]);
+  if (/<sitemapindex/i.test(xml)) {
+    // index of sub-sitemaps — prefer page/post sitemaps, bounded
+    const rank = u => { u = u.toLowerCase(); return u.includes("page") ? 0 : u.includes("post") ? 1 : u.includes("product") ? 2 : 5; };
+    const subs = locs(xml).filter(u => /\.xml/i.test(u)).sort((a, b) => rank(a) - rank(b)).slice(0, 4);
+    const out = [];
+    for (const s of subs) { const sx = await fetchAny(s); if (sx) out.push(...locs(sx)); if (out.length > 50) break; }
+    return out;
+  }
+  return locs(xml);
 }
 
 function extractLinks(html, base) {
