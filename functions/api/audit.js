@@ -74,6 +74,9 @@ export async function onRequestPost(context) {
 /* ========================================================================
    CRAWL
    ===================================================================== */
+// Canonical key for dedup — collapses www/non-www and trailing slashes so the
+// homepage (root vs the www sitemap URL) isn't crawled twice.
+function pageKey(u){ try{ const x=new URL(u); return x.hostname.replace(/^www\./,"") + (x.pathname.replace(/\/+$/,"").toLowerCase()||"/"); }catch{ return u; } }
 async function crawlSite(rootUrl) {
   const root = new URL(rootUrl);
   const seen = new Set();
@@ -90,8 +93,9 @@ async function crawlSite(rootUrl) {
 
   while (queue.length && pages.length < MAX_PAGES) {
     const u = queue.shift();
-    if (seen.has(u)) continue;
-    seen.add(u);
+    const k = pageKey(u);
+    if (seen.has(k)) continue;
+    seen.add(k);
     const html = await fetchText(u);
     if (!html) continue;
     pages.push({ url: u, html });
@@ -101,7 +105,7 @@ async function crawlSite(rootUrl) {
       for (const href of extractLinks(html, u)) {
         try {
           const lu = new URL(href);
-          if (lu.origin === root.origin && !seen.has(lu.href) && !isAsset(lu.pathname)) {
+          if (lu.origin === root.origin && !seen.has(pageKey(lu.href)) && !isAsset(lu.pathname)) {
             queue.push(lu.href);
           }
         } catch {}
