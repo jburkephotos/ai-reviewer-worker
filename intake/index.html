@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Intake — J. Burke Photos</title>
+<style>
+  :root{ --ink:#1a1d1c; --paper:#f4ece0; --bg:#e8e6df; --line:#d6d3c9; --rust:#cf6a28; --teal:#3f8c86; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 20px 80px}
+  .eyebrow{font:600 11px/1 ui-monospace,monospace;letter-spacing:2px;text-transform:uppercase;color:var(--rust);margin:0 0 6px}
+  h1{font-size:34px;margin:0 0 6px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+  .lede{color:#555;margin:14px 0 0}
+  .lede b{color:var(--ink)}
+  section{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:20px 22px;margin:18px 0}
+  h2{font-size:13px;font-family:ui-monospace,monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin:0 0 4px}
+  .sub{font-size:13px;color:#777;margin:0 0 16px}
+  label{display:block;font-size:13px;font-weight:bold;margin:14px 0 4px}
+  .req{color:var(--rust)}
+  .hint{font-weight:normal;color:#999;font-size:12px}
+  input[type=text],input[type=email],input[type=tel],input[type=url],select,textarea{
+    width:100%;font:15px Georgia,serif;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:4px;padding:9px 11px}
+  textarea{min-height:60px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(63,140,134,.18)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
+  .checks{display:flex;flex-wrap:wrap;gap:8px 16px;margin:6px 0 0}
+  .checks label{display:inline-flex;align-items:center;gap:6px;font-weight:normal;margin:0;cursor:pointer}
+  .checks input{width:auto}
+  .faq{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin:8px 0}
+  @media(max-width:560px){.faq{grid-template-columns:1fr}}
+  .bar{position:sticky;bottom:0;background:var(--ink);margin:24px -20px -80px;padding:16px 20px;border-radius:6px 6px 0 0}
+  .bar .btns{display:flex;gap:10px;flex-wrap:wrap}
+  button{font:600 13px ui-monospace,monospace;letter-spacing:.5px;border:0;border-radius:3px;padding:12px 18px;cursor:pointer}
+  .primary{background:var(--rust);color:#fff}
+  .ghost{background:transparent;color:#f4ece0;border:1px solid #5a5750}
+  #out{width:100%;margin:14px 0 0;min-height:140px;background:#fbfaf6;display:none}
+  .note{color:#cbb8a0;font-size:12px;margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">J. Burke Photos · Website Build</p>
+  <h1>Project Intake</h1>
+  <p class="lede">This takes about <b>10 minutes</b>. You only need the <span class="req">★</span> fields — <b>I pull everything else straight from your current site</b> and confirm it with you. Nothing here is binding; it just gets your new site started right. When you're done, hit <b>Generate</b> at the bottom and send it back.</p>
+
+  <section>
+    <h2>1 · Business basics</h2>
+    <label>Business name <span class="req">★</span></label>
+    <input type="text" data-q="Business name" placeholder="What people call you">
+    <label>One-line tagline <span class="hint">— optional</span></label>
+    <input type="text" data-q="Tagline" placeholder="e.g. Oregon's friendly enduro race series">
+    <label>What you do, in 2–3 plain sentences <span class="req">★</span></label>
+    <textarea data-q="What you do"></textarea>
+    <div class="row">
+      <div><label>In business since <span class="hint">— year</span></label><input type="text" data-q="Since year" placeholder="2009"></div>
+      <div><label>What makes you different</label><input type="text" data-q="What makes you different" placeholder="the real reason locals pick you"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · Contact &amp; location</h2>
+    <label>Street address <span class="req">★</span> <span class="hint">— needed for local search</span></label>
+    <input type="text" data-q="Address" placeholder="123 Main St">
+    <div class="row">
+      <div><label>City / State / ZIP <span class="req">★</span></label><input type="text" data-q="City/State/ZIP"></div>
+      <div><label>Phone <span class="req">★</span></label><input type="tel" data-q="Phone"></div>
+    </div>
+    <div class="row">
+      <div><label>Public email</label><input type="email" data-q="Public email"></div>
+      <div><label>Service area <span class="hint">— if beyond one spot</span></label><input type="text" data-q="Service area"></div>
+    </div>
+    <label>Google Business Profile?</label>
+    <div class="checks">
+      <label><input type="radio" name="gbp" data-q="Google Business Profile" value="Yes"> Yes</label>
+      <label><input type="radio" name="gbp" data-q="Google Business Profile" value="No"> No</label>
+      <label><input type="radio" name="gbp" data-q="Google Business Profile" value="Not sure"> Not sure</label>
+    </div>
+    <input type="text" data-q="Google profile link" placeholder="link (if you have it)" style="margin-top:8px">
+  </section>
+
+  <section>
+    <h2>3 · Hours</h2>
+    <label>Regular hours <span class="hint">— or "by appointment" / "seasonal"</span></label>
+    <textarea data-q="Hours" placeholder="Mon–Fri 9–5, Sat 10–4…"></textarea>
+  </section>
+
+  <section>
+    <h2>4 · Online presence</h2>
+    <label>Current website <span class="req">★</span></label>
+    <input type="url" data-q="Current website" placeholder="yoursite.com">
+    <label>Social links <span class="hint">— Facebook, Instagram, etc.</span></label>
+    <textarea data-q="Socials"></textarea>
+    <label>Booking / ordering / reservation link</label>
+    <input type="url" data-q="Booking link">
+    <label>Anything that MUST be kept <span class="hint">— a payment page, a form, a login</span></label>
+    <input type="text" data-q="Must keep">
+  </section>
+
+  <section>
+    <h2>5 · Pages</h2>
+    <p class="sub">Which pages should the new site have? (check all that apply)</p>
+    <div class="checks" data-group="Pages needed">
+      <label><input type="checkbox" value="Home"> Home</label>
+      <label><input type="checkbox" value="About"> About</label>
+      <label><input type="checkbox" value="Services"> Services</label>
+      <label><input type="checkbox" value="Menu"> Menu</label>
+      <label><input type="checkbox" value="Gallery"> Gallery</label>
+      <label><input type="checkbox" value="Events"> Events</label>
+      <label><input type="checkbox" value="FAQ"> FAQ</label>
+      <label><input type="checkbox" value="Contact"> Contact</label>
+      <label><input type="checkbox" value="Shop"> Shop</label>
+    </div>
+    <label style="margin-top:14px">Anything to drop, or new pages you've wanted?</label>
+    <textarea data-q="Pages to drop / add"></textarea>
+  </section>
+
+  <section>
+    <h2>6 · Services / menu / offerings</h2>
+    <label>Your list — or just say "pull from my site"</label>
+    <textarea data-q="Services/offerings" placeholder="pull from my current site, I'll confirm"></textarea>
+  </section>
+
+  <section>
+    <h2>7 · FAQs <span class="hint" style="font-weight:normal;text-transform:none;letter-spacing:0;color:#999">— the real questions customers ask (this is what makes AI search cite you)</span></h2>
+    <div id="faqs">
+      <div class="faq"><input type="text" class="faq-q" placeholder="Question"><input type="text" class="faq-a" placeholder="Short answer"></div>
+      <div class="faq"><input type="text" class="faq-q" placeholder="Question"><input type="text" class="faq-a" placeholder="Short answer"></div>
+      <div class="faq"><input type="text" class="faq-q" placeholder="Question"><input type="text" class="faq-a" placeholder="Short answer"></div>
+      <div class="faq"><input type="text" class="faq-q" placeholder="Question"><input type="text" class="faq-a" placeholder="Short answer"></div>
+      <div class="faq"><input type="text" class="faq-q" placeholder="Question"><input type="text" class="faq-a" placeholder="Short answer"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>8 · Proof</h2>
+    <label>Awards / "voted best ___" / press</label>
+    <input type="text" data-q="Awards">
+    <label>A few real testimonials <span class="hint">— with name + role if you can</span></label>
+    <textarea data-q="Testimonials"></textarea>
+    <label>Star rating / review counts <span class="hint">— Google, Yelp</span></label>
+    <input type="text" data-q="Ratings">
+  </section>
+
+  <section>
+    <h2>9 · Brand &amp; design</h2>
+    <label>Brand colors / fonts <span class="hint">— if you have them</span></label>
+    <input type="text" data-q="Colors/fonts">
+    <label>2–3 sites whose look you like</label>
+    <textarea data-q="Reference sites" placeholder="paste links"></textarea>
+    <label>Vibe in 3 words <span class="hint">— e.g. clean / rugged / playful</span></label>
+    <input type="text" data-q="Vibe words">
+    <label>Anything you hate / want to avoid</label>
+    <input type="text" data-q="Avoid">
+    <label>Your current design — reuse the look, or start fresh?</label>
+    <div class="checks">
+      <label><input type="radio" name="fresh" data-q="Reuse or fresh" value="Reuse the look"> Reuse the look</label>
+      <label><input type="radio" name="fresh" data-q="Reuse or fresh" value="Start fresh"> Start fresh</label>
+      <label><input type="radio" name="fresh" data-q="Reuse or fresh" value="You decide"> You decide</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>10 · Photos</h2>
+    <label>Photo gallery / folder link <span class="hint">— Zenfolio, Dropbox, etc.</span></label>
+    <input type="url" data-q="Photo link">
+    <label>Which shots are the heroes? <span class="hint">— or "you pick"</span></label>
+    <input type="text" data-q="Hero shots" placeholder="you pick">
+  </section>
+
+  <section>
+    <h2>11 · Domain, DNS &amp; email <span class="hint" style="font-weight:normal;text-transform:none;letter-spacing:0;color:#999">— for a safe switch-over; your email keeps working</span></h2>
+    <div class="row">
+      <div><label>Domain registrar <span class="req">★</span></label>
+        <select data-q="Registrar"><option value="">— choose —</option><option>GoDaddy</option><option>Namecheap</option><option>Google Domains / Squarespace</option><option>Bluehost</option><option>Wix</option><option>Network Solutions</option><option>Other / not sure</option></select>
+      </div>
+      <div><label>Email provider <span class="req">★</span></label>
+        <select data-q="Email provider"><option value="">— choose —</option><option>Google Workspace / Gmail</option><option>Microsoft 365 / Outlook</option><option>GoDaddy email</option><option>Through my web host</option><option>Other / not sure</option></select>
+      </div>
+    </div>
+    <label>Current website host <span class="hint">— if you know it</span></label>
+    <input type="text" data-q="Current host" placeholder="GoDaddy, Wix, WordPress.com…">
+  </section>
+
+  <section>
+    <h2>12 · Goals</h2>
+    <p class="sub">What should the new site mainly get people to do?</p>
+    <div class="checks" data-group="Primary goals">
+      <label><input type="checkbox" value="Call"> Call</label>
+      <label><input type="checkbox" value="Book / reserve"> Book / reserve</label>
+      <label><input type="checkbox" value="Visit in person"> Visit in person</label>
+      <label><input type="checkbox" value="Order online"> Order online</label>
+      <label><input type="checkbox" value="Register / sign up"> Register / sign up</label>
+      <label><input type="checkbox" value="Get found in search"> Get found in search</label>
+    </div>
+    <label style="margin-top:14px">Any deadline or event to hit?</label>
+    <input type="text" data-q="Deadline">
+    <label>Anything else I should know?</label>
+    <textarea data-q="Anything else"></textarea>
+  </section>
+
+  <div class="bar">
+    <p class="note">Done? Generate your answers, then <b>Copy</b> or <b>Download</b> and send them to jlburkephotos@gmail.com.</p>
+    <div class="btns">
+      <button class="primary" onclick="gen()">Generate my answers ↓</button>
+      <button class="ghost" onclick="copyOut()">Copy</button>
+      <button class="ghost" onclick="download()">Download .txt</button>
+      <button class="ghost" onclick="email()">Email it</button>
+    </div>
+    <textarea id="out" readonly></textarea>
+  </div>
+</div>
+
+<script>
+function gen(){
+  let biz = (document.querySelector('[data-q="Business name"]').value || "your business").trim();
+  let lines = ["# Project Intake — " + biz, ""];
+  document.querySelectorAll('section').forEach(sec=>{
+    const head = sec.querySelector('h2').textContent.replace(/\s+—.*/,'').trim();
+    let block = [];
+    // simple fields
+    sec.querySelectorAll('[data-q]').forEach(el=>{
+      if(el.type==='radio'){ if(el.checked) block.push("- **"+el.getAttribute('data-q')+":** "+el.value); return; }
+      const v=(el.value||"").trim(); if(v) block.push("- **"+el.getAttribute('data-q')+":** "+v);
+    });
+    // checkbox groups
+    sec.querySelectorAll('[data-group]').forEach(g=>{
+      const picked=[...g.querySelectorAll('input:checked')].map(c=>c.value);
+      if(picked.length) block.push("- **"+g.getAttribute('data-group')+":** "+picked.join(", "));
+    });
+    // faqs
+    if(sec.querySelector('#faqs')){
+      sec.querySelectorAll('.faq').forEach(f=>{
+        const q=f.querySelector('.faq-q').value.trim(), a=f.querySelector('.faq-a').value.trim();
+        if(q) block.push("- **Q:** "+q+(a?("  **A:** "+a):""));
+      });
+    }
+    if(block.length){ lines.push("## "+head, ...block, ""); }
+  });
+  const out=document.getElementById('out');
+  out.value=lines.join("\n");
+  out.style.display='block';
+  out.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function copyOut(){ const o=document.getElementById('out'); if(!o.value){gen();} o.select(); navigator.clipboard.writeText(o.value).then(()=>flash("Copied! Paste it into an email to jlburkephotos@gmail.com")); }
+function download(){ const o=document.getElementById('out'); if(!o.value){gen();}
+  const biz=(document.querySelector('[data-q="Business name"]').value||"intake").trim().replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([o.value],{type:'text/plain'})); a.download=biz+'-intake.txt'; a.click(); }
+function email(){ const o=document.getElementById('out'); if(!o.value){gen();}
+  const biz=(document.querySelector('[data-q="Business name"]').value||"my business").trim();
+  location.href='mailto:jlburkephotos@gmail.com?subject='+encodeURIComponent('Website intake — '+biz)+'&body='+encodeURIComponent(o.value.slice(0,1800)+'\n\n(If this got cut off, just paste the full copied version.)'); }
+function flash(msg){ const n=document.querySelector('.note'); const old=n.innerHTML; n.textContent=msg; setTimeout(()=>n.innerHTML=old,4000); }
+</script>
+</body>
+</html>
