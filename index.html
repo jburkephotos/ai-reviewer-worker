@@ -59,6 +59,13 @@
   .surface .sname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.1em;
     text-transform:uppercase;color:var(--mark);font-weight:600;margin-bottom:8px}
   .surface .sbody{font-size:13.5px;color:rgba(26,29,28,.78)}
+  .benchmark .bm-row{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+  .benchmark .bm-stat{text-align:center}
+  .benchmark .bm-num{font-size:34px;font-weight:700;line-height:1;letter-spacing:-.01em}
+  .benchmark .bm-lab{font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:rgba(26,29,28,.55);margin-top:6px}
+  .benchmark .bm-vs{font-size:13px;color:rgba(26,29,28,.4);padding-bottom:9px}
+  .benchmark .bm-opp{font-size:14.5px;line-height:1.5;color:rgba(26,29,28,.8);margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .benchmark .bm-src{font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.04em;color:rgba(26,29,28,.45);margin-top:10px}
   .meters{display:grid;gap:16px}
   .meter .mtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
   .meter .mname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mark);font-weight:600}
@@ -315,6 +322,28 @@ function meterColor(v){
   if (v < 70) return "var(--warn)";
   return "var(--kelp)";
 }
+// Benchmark from the chamber scan (1,025 Oregon coast/valley local sites) — the honest "where you stand"
+const LOCAL_AVG = 46;     // overall avg AEO score across the 1,025 sites measured
+const LOCAL_DF_PCT = 92;  // % that scored a D or F
+function benchmarkPanel(d){
+  const sc = d.score || {};
+  if ((d.quote && d.quote.enterprise) || sc.pct == null) return "";
+  const you = Math.round(sc.pct);
+  const ahead = you >= LOCAL_AVG;
+  return `<div class="panel benchmark">
+    <h2>Where you stand</h2>
+    <div class="bm-row">
+      <div class="bm-stat"><div class="bm-num" style="color:${gradeColor(you)}">${you}</div><div class="bm-lab">Your score</div></div>
+      <div class="bm-vs">vs</div>
+      <div class="bm-stat"><div class="bm-num">${LOCAL_AVG}</div><div class="bm-lab">Local-business average</div></div>
+      <div class="bm-stat"><div class="bm-num">${LOCAL_DF_PCT}%</div><div class="bm-lab">score a D or F</div></div>
+    </div>
+    <div class="bm-opp">${ahead
+      ? "You're ahead of most — but almost no one in your space is doing this well, which is exactly the opening to become the business AI search recommends."
+      : "You're behind most local businesses — but they're nearly all failing too, so the field is wide open to whoever fixes it first."}</div>
+    <p class="bm-src">Based on 1,025 local business sites we've measured across the region.</p>
+  </div>`;
+}
 function scorecard(d, r){
   const surf = (d.score && d.score.surfaces) || {};
   const reads = r.surfaces || {};
@@ -465,6 +494,9 @@ function render(d) {
       <div class="tdesc">${esc(TIER_DESC[d.tier]||"")}</div>
     </div>
   </div>`;
+
+  // where you stand vs the local-business benchmark (from the chamber scan)
+  h += benchmarkPanel(d);
 
   // verdict (Claude judgment)
   if (r.summary) h += `<div class="verdict">${esc(r.summary)}</div>`;
