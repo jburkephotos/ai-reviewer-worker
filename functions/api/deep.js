@@ -191,7 +191,7 @@ async function fetchText(u) {
   const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
     const r = await fetch(u, { signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (AI-Review deep; jburkephotos.com)" },
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" },
       cf: { cacheTtl: 300 } });
     clearTimeout(t);
     if (!r.ok) return null;
@@ -205,7 +205,7 @@ async function fetchAny(u) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    const r = await fetch(u, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (AI-Review deep; jburkephotos.com)" }, cf: { cacheTtl: 300 } });
+    const r = await fetch(u, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" }, cf: { cacheTtl: 300 } });
     clearTimeout(t);
     if (!r.ok) return null;
     return await r.text();
