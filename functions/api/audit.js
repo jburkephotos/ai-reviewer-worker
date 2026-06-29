@@ -449,7 +449,7 @@ Apply Jeremy's exact methodology:
 
 THREE SURFACES — assess each separately:
   1. ORGANIC SEO — classic Google ranking: titles, meta, headings, internal linking, crawlability.
-  2. ANSWER / GENERATIVE SEARCH (AEO/GEO) — whether ChatGPT, Perplexity, Google AI can read and cite this site: JSON-LD schema, FAQ markup, question-led headings, an entity graph (Organization/Person/LocalBusiness), citable factual copy.
+  2. ANSWER / GENERATIVE SEARCH (AEO/GEO) — whether ChatGPT, Perplexity, Gemini, and Google AI Overviews can read and cite this site: JSON-LD schema, FAQ markup, question-led headings, an entity graph (Organization/Person/LocalBusiness), citable factual copy.
   3. LOCAL / MAP — LocalBusiness schema, NAP consistency, geo signals, map presence.
 
 FIVE HARD GATES (frame fixes so they'd pass these):
@@ -645,7 +645,7 @@ function emailScorecard(d) {
   const verdict = r.summary ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:0 0 18px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(r.summary)}</td></tr></table>` : "";
   const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up &middot; 3 surfaces</div>` +
     emailBar("Google / SEO", surf.organic, reads.organic) +
-    emailBar("AI Search · ChatGPT / Perplexity", surf.answer, reads.answer) +
+    emailBar("AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", surf.answer, reads.answer) +
     emailBar("Local / Map pack", surf.local, reads.local);
   return band + verdict + bars;
 }
@@ -689,7 +689,7 @@ function emailShell(url, inner) {
     <div style="font:700 34px Georgia,serif;color:#1a1d1c;border-bottom:2px solid #1a1d1c;padding:0 0 14px">AI Review</div>
     <div style="font:400 13px Georgia,serif;color:#666;margin:12px 0 22px">${escHtml(url)}</div>
     ${inner}
-    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like ChatGPT and Perplexity — and exactly what it takes to fix it. Yours to keep.</div>
+    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like Google AI Overviews, ChatGPT, and Gemini — and exactly what it takes to fix it. Yours to keep.</div>
   </td></tr></table></div>`;
 }
 async function sendEmail(env, subject, html) {
