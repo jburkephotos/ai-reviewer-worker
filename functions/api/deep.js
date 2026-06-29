@@ -157,7 +157,7 @@ async function crawlSite(rootUrl) {
   // link-following alone stops at the homepage. The sitemap gives us the real pages.
   try {
     for (const u of await sitemapUrls(root.origin)) {
-      try { const lu = new URL(u); if (lu.origin === root.origin && !isAsset(lu.pathname) && !queue.includes(lu.href)) queue.push(lu.href); } catch {}
+      try { const lu = new URL(u); if (lu.hostname.replace(/^www\./, "") === root.hostname.replace(/^www\./, "") && !isAsset(lu.pathname) && !queue.includes(lu.href)) queue.push(lu.href); } catch {}
     }
   } catch {}
 
