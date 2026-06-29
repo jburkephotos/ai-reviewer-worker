@@ -201,56 +201,64 @@
   </section>
 
   <div class="bar">
-    <p class="note">Done? Generate your answers, then <b>Copy</b> or <b>Download</b> and send them to jlburkephotos@gmail.com.</p>
+    <p class="note" id="note">When you're done, hit <b>Send</b> — your answers go straight to Jeremy, nothing else to do. (Prefer to send it yourself? Use Copy or Download.)</p>
     <div class="btns">
-      <button class="primary" onclick="gen()">Generate my answers ↓</button>
+      <button class="primary" onclick="submitForm(this)">Send my answers →</button>
       <button class="ghost" onclick="copyOut()">Copy</button>
-      <button class="ghost" onclick="download()">Download .txt</button>
-      <button class="ghost" onclick="email()">Email it</button>
+      <button class="ghost" onclick="download()">Download</button>
     </div>
     <textarea id="out" readonly></textarea>
   </div>
 </div>
 
 <script>
-function gen(){
-  let biz = (document.querySelector('[data-q="Business name"]').value || "your business").trim();
-  let lines = ["# Project Intake — " + biz, ""];
+function collect(){
+  const business=(document.querySelector('[data-q="Business name"]').value||"").trim();
+  const sections=[];
   document.querySelectorAll('section').forEach(sec=>{
-    const head = sec.querySelector('h2').textContent.replace(/\s+—.*/,'').trim();
-    let block = [];
-    // simple fields
+    const name=sec.querySelector('h2').textContent.replace(/\s+—.*/,'').trim();
+    const items=[];
     sec.querySelectorAll('[data-q]').forEach(el=>{
-      if(el.type==='radio'){ if(el.checked) block.push("- **"+el.getAttribute('data-q')+":** "+el.value); return; }
-      const v=(el.value||"").trim(); if(v) block.push("- **"+el.getAttribute('data-q')+":** "+v);
+      if(el.type==='radio'){ if(el.checked) items.push({q:el.getAttribute('data-q'),v:el.value}); return; }
+      const v=(el.value||"").trim(); if(v) items.push({q:el.getAttribute('data-q'),v:v});
     });
-    // checkbox groups
     sec.querySelectorAll('[data-group]').forEach(g=>{
       const picked=[...g.querySelectorAll('input:checked')].map(c=>c.value);
-      if(picked.length) block.push("- **"+g.getAttribute('data-group')+":** "+picked.join(", "));
+      if(picked.length) items.push({q:g.getAttribute('data-group'),v:picked.join(", ")});
     });
-    // faqs
     if(sec.querySelector('#faqs')){
-      sec.querySelectorAll('.faq').forEach(f=>{
+      sec.querySelectorAll('.faq').forEach((f,i)=>{
         const q=f.querySelector('.faq-q').value.trim(), a=f.querySelector('.faq-a').value.trim();
-        if(q) block.push("- **Q:** "+q+(a?("  **A:** "+a):""));
+        if(q) items.push({q:"FAQ "+(i+1),v:q+(a?(" — "+a):"")});
       });
     }
-    if(block.length){ lines.push("## "+head, ...block, ""); }
+    if(items.length) sections.push({name:name,items:items});
   });
-  const out=document.getElementById('out');
-  out.value=lines.join("\n");
-  out.style.display='block';
-  out.scrollIntoView({behavior:'smooth',block:'center'});
+  return {business:business,sections:sections};
 }
-function copyOut(){ const o=document.getElementById('out'); if(!o.value){gen();} o.select(); navigator.clipboard.writeText(o.value).then(()=>flash("Copied! Paste it into an email to jlburkephotos@gmail.com")); }
-function download(){ const o=document.getElementById('out'); if(!o.value){gen();}
-  const biz=(document.querySelector('[data-q="Business name"]').value||"intake").trim().replace(/[^a-z0-9]+/gi,'-').toLowerCase();
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([o.value],{type:'text/plain'})); a.download=biz+'-intake.txt'; a.click(); }
-function email(){ const o=document.getElementById('out'); if(!o.value){gen();}
-  const biz=(document.querySelector('[data-q="Business name"]').value||"my business").trim();
-  location.href='mailto:jlburkephotos@gmail.com?subject='+encodeURIComponent('Website intake — '+biz)+'&body='+encodeURIComponent(o.value.slice(0,1800)+'\n\n(If this got cut off, just paste the full copied version.)'); }
-function flash(msg){ const n=document.querySelector('.note'); const old=n.innerHTML; n.textContent=msg; setTimeout(()=>n.innerHTML=old,4000); }
+function genText(d){
+  let lines=["# Project Intake — "+(d.business||"your business"),""];
+  d.sections.forEach(s=>{ lines.push("## "+s.name); s.items.forEach(it=>lines.push("- **"+it.q+":** "+it.v)); lines.push(""); });
+  return lines.join("\n");
+}
+function fillOut(){ const o=document.getElementById('out'); o.value=genText(collect()); o.style.display='block'; return o.value; }
+function copyOut(){ const t=fillOut(); navigator.clipboard.writeText(t).then(()=>flash("Copied! Paste it into an email to jlburkephotos@gmail.com")); }
+function download(){ const d=collect(); const name=(d.business||"intake").replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([genText(d)],{type:'text/plain'})); a.download=name+'-intake.txt'; a.click(); }
+async function submitForm(btn){
+  const d=collect();
+  if(!d.business){ flash("Please add your business name first ↑"); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  btn.disabled=true; const orig=btn.textContent; btn.textContent="Sending…";
+  try{
+    const r=await fetch('/api/intake',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(d)});
+    const j=await r.json().catch(()=>({ok:false}));
+    if(j.ok){ document.querySelector('.btns').style.display='none'; document.getElementById('out').style.display='none';
+      flash("✓ Sent — thank you! Jeremy has your answers and will be in touch. Nothing else needed."); }
+    else throw new Error('send failed');
+  }catch(e){ btn.disabled=false; btn.textContent=orig;
+    flash("Hmm — couldn't send automatically. Please hit Copy or Download and email it to jlburkephotos@gmail.com."); fillOut(); }
+}
+function flash(msg){ document.getElementById('note').textContent=msg; }
 </script>
 </body>
 </html>
