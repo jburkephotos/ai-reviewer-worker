@@ -279,10 +279,12 @@ function analyzeSignals(crawl) {
   // question-led headings — content AI engines preferentially extract
   const questionHeadings = all.reduce((n, p) =>
     n + (p.html.match(/<h[2-4][^>]*>\s*[^<]*\?\s*<\/h[2-4]>/gi) || []).length, 0);
-  // staleness: most recent 4-digit year visible in content vs current year
+  // staleness: most recent 4-digit year in VISIBLE TEXT. Strip <script>/JSON first, and
+  // reject 4-digit numbers that are part of a price/decimal/larger number (e.g. a $2028.0
+  // print price or a product id) so they aren't mistaken for a future calendar year.
   let newestYear = null;
   for (const p of all) {
-    const yrs = p.html.match(/\b(20[12]\d)\b/g);
+    const yrs = stripToText(p.html).match(/(?<![\d.$])(20[12]\d)(?![\d.])/g);
     if (yrs) for (const y of yrs) { const n = +y; if (n > (newestYear || 0)) newestYear = n; }
   }
   const looksStale = newestYear !== null && newestYear <= 2024; // nothing dated 2025+
