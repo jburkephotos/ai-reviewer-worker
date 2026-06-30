@@ -40,14 +40,14 @@ export async function onRequestPost(context) {
     const score = deriveScore(signals);
     score.surfaces = surfaceScores(signals);   // per-surface 0–100 for the visual scorecard
 
-    // --- 3. CLAUDE JUDGMENT LAYER --------------------------------------
-    let report = null;
-    try {
-      report = await claudeJudgment(env, clean, crawl, signals, tier, score);
-    } catch (e) {
-      // If Claude fails, still return the deterministic audit — never 500 the user.
-      report = { error: "judgment_unavailable", detail: String(e) };
-    }
+    // --- 3. CLAUDE JUDGMENT + PAGE SPEED (run concurrently) ------------
+    const [reportRes, speedRes] = await Promise.all([
+      claudeJudgment(env, clean, crawl, signals, tier, score)
+        .catch(e => ({ error: "judgment_unavailable", detail: String(e) })),
+      pageSpeed(clean, env).catch(() => null),
+    ]);
+    const report = reportRes;
+    const speed = speedRes ? { score: speedRes.score, lcp: speedRes.lcp, read: speedRead(speedRes) } : null;
 
     const payload = {
       url: clean,
@@ -56,6 +56,7 @@ export async function onRequestPost(context) {
       signals,
       quote,
       report,           // { summary, surfaces:{organic,answer,local}, findings:[...] }
+      speed,            // { score, lcp, read } from PageSpeed Insights — null if unavailable
       crawledPages: crawl.pages.map(p => p.url),
     };
 
@@ -591,6 +592,37 @@ function surfaceScores(s) {
    OWNER NOTIFICATION — Jeremy gets a copy of every audit that runs.
    Private (to LEAD_TO), reuses the Resend setup from lead.js. Best-effort.
    ===================================================================== */
+/* ========================================================================
+   PAGE SPEED — real Lighthouse performance via Google PageSpeed Insights.
+   Mobile strategy (harsher + where most traffic is). Uses PAGESPEED_API_KEY
+   if set, else runs keyless (Google rate-limits keyless hard — a key is
+   effectively required). Never throws — returns null on any failure so the
+   audit always completes without a speed reading rather than erroring.
+   ===================================================================== */
+async function pageSpeed(url, env) {
+  try {
+    const key = env.PAGESPEED_API_KEY ? `&key=${env.PAGESPEED_API_KEY}` : "";
+    const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&category=performance${key}`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 22000);
+    const r = await fetch(api, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const perf = d && d.lighthouseResult && d.lighthouseResult.categories && d.lighthouseResult.categories.performance;
+    if (!perf || perf.score == null) return null;
+    const lcpA = (d.lighthouseResult.audits || {})["largest-contentful-paint"] || {};
+    return { score: Math.round(perf.score * 100), lcp: lcpA.displayValue || null, lcpMs: lcpA.numericValue || null };
+  } catch { return null; }
+}
+function speedRead(s) {
+  if (!s) return null;
+  const lcp = s.lcp ? ` Its largest element takes ${s.lcp} to appear on mobile.` : "";
+  if (s.score >= 90) return `Fast — the page loads quickly on mobile, so speed isn't costing you visitors.${lcp}`;
+  if (s.score >= 50) return `Middling — there's real lag on mobile.${lcp} Faster pages hold more visitors and Google rewards them.`;
+  return `Slow — this is actively costing you visitors and search rankings.${lcp} Most people abandon a page that takes more than 3 seconds; a modern rebuild loads near-instantly.`;
+}
+
 async function emailOwnerSummary(env, d) {
   const html = emailShell(d.url, emailScorecard(d) + emailFindings(d.report) + emailPhase1(d));
   await sendEmail(env, `AI Review — ${safeHost(d.url)} — ${(d.score && d.score.grade) || ""} (${d.tier})`, html);
@@ -645,10 +677,11 @@ function emailScorecard(d) {
       <div style="font:400 13px Georgia,serif;color:rgba(244,242,236,.72)">${escHtml(EMAIL_TIER_DESC[d.tier] || "")}</div>
     </td></tr></table>`;
   const verdict = r.summary ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:0 0 18px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(r.summary)}</td></tr></table>` : "";
-  const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up &middot; 3 surfaces</div>` +
+  const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up</div>` +
     emailBar("Google / SEO", surf.organic, reads.organic) +
     emailBar("AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", surf.answer, reads.answer) +
-    emailBar("Local / Map pack", surf.local, reads.local);
+    emailBar("Local / Map pack", surf.local, reads.local) +
+    (d.speed ? emailBar("Speed · Core Web Vitals (mobile)", d.speed.score, d.speed.read) : "");
   return band + verdict + bars;
 }
 function emailFindings(report) {

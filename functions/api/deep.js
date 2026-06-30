@@ -296,10 +296,11 @@ function emailScorecard(d) {
       <div style="font:400 13px Georgia,serif;color:rgba(244,242,236,.72)">${escHtml(EMAIL_TIER_DESC[d.tier] || "")}</div>
     </td></tr></table>`;
   const verdict = r.summary ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:0 0 18px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(r.summary)}</td></tr></table>` : "";
-  const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up &middot; 3 surfaces</div>` +
+  const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up</div>` +
     emailBar("Google / SEO", surf.organic, reads.organic) +
     emailBar("AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", surf.answer, reads.answer) +
-    emailBar("Local / Map pack", surf.local, reads.local);
+    emailBar("Local / Map pack", surf.local, reads.local) +
+    (d.speed ? emailBar("Speed · Core Web Vitals (mobile)", d.speed.score, d.speed.read) : "");
   return band + verdict + bars;
 }
 function emailPhase1(d) {
