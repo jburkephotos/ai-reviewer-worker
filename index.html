@@ -486,11 +486,11 @@ function render(d) {
 
   // score band (color-coded by grade)
   const sc = d.score || {};
-  const sCol = ent ? "var(--tide)" : gradeColor(sc.pct);
+  const sCol = gradeColor(sc.pct);
   h += `<div class="scoreband">
-    <div class="scorenum" style="color:${sCol}">${ent ? "—" : esc(sc.grade)}${ent ? "" : `<small>${esc(sc.pct)}%</small>`}</div>
+    <div class="scorenum" style="color:${sCol}">${esc(sc.grade)}<small>${esc(sc.pct)}%</small></div>
     <div class="scoremeta">
-      <div class="tier">${esc(d.tier)} tier · ${esc(d.signals.pageCount)}${d.signals.crawlCapped?"+":""} pages${d.signals.commerceState==="store"?" · sells online":d.signals.commerceState==="installed_empty"?" · store set up, not stocked":""}</div>
+      <div class="tier">${esc(d.tier)} tier · ${esc(d.signals.siteSize || d.signals.pageCount)}${(d.signals.crawlCapped || (d.signals.siteSize||0) > (d.signals.pageCount||0))?"+":""} pages${d.signals.commerceState==="store"?" · sells online":d.signals.commerceState==="installed_empty"?" · store set up, not stocked":""}</div>
       <div class="tname">${esc(d.quote.name)}</div>
       <div class="tdesc">${esc(TIER_DESC[d.tier]||"")}</div>
     </div>

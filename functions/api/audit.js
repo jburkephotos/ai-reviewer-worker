@@ -35,7 +35,7 @@ export async function onRequestPost(context) {
 
     // --- 2. DETERMINISTIC SIGNALS + TIER + QUOTE ------------------------
     const signals = analyzeSignals(crawl);
-    const tier = classify(signals.pageCount, signals.hasStore);
+    const tier = classify(signals.siteSize, signals.hasStore);
     const quote = buildQuote(tier);
     const score = deriveScore(signals);
     score.surfaces = surfaceScores(signals);   // per-surface 0–100 for the visual scorecard
@@ -86,8 +86,14 @@ async function crawlSite(rootUrl) {
 
   // Seed from the sitemap too — many modern sites render their nav with JavaScript, so the
   // raw HTML has no internal links and link-following alone would stop at the homepage.
+  // ...and count the sitemap's content URLs (uncapped, minus tag/category/author/feed junk)
+  // as the TRUE site size, so tier + quote reflect the real site, not the 12-page crawl cap.
+  let sitemapTotal = 0;
   try {
-    for (const u of await sitemapUrls(root.origin)) {
+    const sm = await sitemapUrls(root.origin);
+    const lowValue = /\/(tag|category|author|feed)\//i;
+    sitemapTotal = sm.filter(u => { try { return !lowValue.test(new URL(u).pathname); } catch { return true; } }).length;
+    for (const u of sm) {
       try { const lu = new URL(u); if (lu.hostname.replace(/^www\./, "") === root.hostname.replace(/^www\./, "") && !isAsset(lu.pathname) && !queue.includes(lu.href)) queue.push(lu.href); } catch {}
     }
   } catch {}
@@ -113,7 +119,7 @@ async function crawlSite(rootUrl) {
       }
     }
   }
-  return { root: rootUrl, origin: root.origin, pages };
+  return { root: rootUrl, origin: root.origin, pages, sitemapTotal };
 }
 
 async function fetchText(u) {
@@ -293,6 +299,8 @@ function analyzeSignals(crawl) {
   return {
     pageCount: all.length,        // note: capped at MAX_PAGES; flagged below if hit cap
     crawlCapped: all.length >= MAX_PAGES,
+    sitemapTotal: crawl.sitemapTotal || 0,
+    siteSize: Math.max(all.length, crawl.sitemapTotal || 0),  // TRUE size for tier/quote + display
     hasStore,
     commerceState,                // "none" | "installed_empty" | "store"
     retailHint,
@@ -333,11 +341,11 @@ function collectTypes(node, set) {
    TIER + QUOTE  — mirrors the front-end engine exactly
    ===================================================================== */
 function classify(pages, hasStore) {
-  if (hasStore) return pages >= 35 ? "enterprise" : "large";
+  if (hasStore) return "large";   // a real store = the Large / e-commerce tier (regardless of catalog size)
   if (pages <= 6) return "small";
   if (pages <= 19) return "medium";
-  if (pages <= 34) return "large";
-  return "enterprise";
+  if (pages <= 49) return "large";
+  return "enterprise";            // 50+ pages of content = institutional → routes to a conversation, not an auto-quote
 }
 
 const TIER_DEFS = {
@@ -492,7 +500,7 @@ TIER (already classified by code): ${tier}
 HEALTH SCORE (already computed): ${score.pct}% (${score.grade})
 
 DETERMINISTIC SIGNALS (ground truth — do not contradict):
-- pages crawled: ${signals.pageCount}${signals.crawlCapped ? " (hit crawl cap; site is larger)" : ""}
+- pages crawled: ${signals.pageCount}${signals.siteSize > signals.pageCount ? ` (a sample — the full site is ~${signals.siteSize} pages per its sitemap)` : ""}
 - platform: ${signals.platform}
 - commerce state: ${signals.commerceState}${signals.commerceState === "installed_empty" ? " (store platform live but NO products — opportunity!)" : ""}
 - retail business: ${signals.retailHint}
@@ -665,14 +673,14 @@ function emailBar(name, val, read) {
 function emailScorecard(d) {
   const sc = d.score || {}, surf = sc.surfaces || {}, sig = d.signals || {}, r = d.report || {}, reads = r.surfaces || {};
   const ent = d.quote && d.quote.enterprise;
-  const gcol = ent ? "#9fc3d4" : gradeColorEmail(sc.pct);
+  const gcol = gradeColorEmail(sc.pct);
   const band = `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#1a1d1c" style="border-radius:4px;margin:0 0 16px"><tr>
     <td width="118" align="center" valign="middle" style="padding:22px 16px 22px 24px">
-      <div style="font:700 52px Georgia,serif;color:${gcol};line-height:1">${ent ? "&mdash;" : escHtml(sc.grade || "")}</div>
-      ${ent ? "" : `<div style="font:400 15px Georgia,serif;color:rgba(244,242,236,.5);margin:4px 0 0">${escHtml(String(sc.pct == null ? "" : sc.pct))}%</div>`}
+      <div style="font:700 52px Georgia,serif;color:${gcol};line-height:1">${escHtml(sc.grade || "")}</div>
+      <div style="font:400 15px Georgia,serif;color:rgba(244,242,236,.5);margin:4px 0 0">${escHtml(String(sc.pct == null ? "" : sc.pct))}%</div>
     </td>
     <td valign="middle" style="padding:22px 24px 22px 0">
-      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#e8a07a;margin:0 0 6px">${escHtml(d.tier)} tier &middot; ${escHtml(String(sig.pageCount || "?"))} pages</div>
+      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#e8a07a;margin:0 0 6px">${escHtml(d.tier)} tier &middot; ${escHtml(String(sig.siteSize || sig.pageCount || "?"))} pages</div>
       <div style="font:700 21px Georgia,serif;color:#f4f2ec;margin:0 0 5px">${escHtml((d.quote && d.quote.name) || "")}</div>
       <div style="font:400 13px Georgia,serif;color:rgba(244,242,236,.72)">${escHtml(EMAIL_TIER_DESC[d.tier] || "")}</div>
     </td></tr></table>`;

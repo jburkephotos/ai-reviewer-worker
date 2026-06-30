@@ -284,14 +284,14 @@ function emailBar(name, val, read) {
 function emailScorecard(d) {
   const sc = d.score || {}, surf = sc.surfaces || {}, sig = d.signals || {}, r = d.report || {}, reads = r.surfaces || {};
   const ent = d.quote && d.quote.enterprise;
-  const gcol = ent ? "#9fc3d4" : gradeColorEmail(sc.pct);
+  const gcol = gradeColorEmail(sc.pct);
   const band = `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#1a1d1c" style="border-radius:4px;margin:0 0 16px"><tr>
     <td width="118" align="center" valign="middle" style="padding:22px 16px 22px 24px">
-      <div style="font:700 52px Georgia,serif;color:${gcol};line-height:1">${ent ? "&mdash;" : escHtml(sc.grade || "")}</div>
-      ${ent ? "" : `<div style="font:400 15px Georgia,serif;color:rgba(244,242,236,.5);margin:4px 0 0">${escHtml(String(sc.pct == null ? "" : sc.pct))}%</div>`}
+      <div style="font:700 52px Georgia,serif;color:${gcol};line-height:1">${escHtml(sc.grade || "")}</div>
+      <div style="font:400 15px Georgia,serif;color:rgba(244,242,236,.5);margin:4px 0 0">${escHtml(String(sc.pct == null ? "" : sc.pct))}%</div>
     </td>
     <td valign="middle" style="padding:22px 24px 22px 0">
-      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#e8a07a;margin:0 0 6px">${escHtml(d.tier)} tier &middot; ${escHtml(String(sig.pageCount || "?"))} pages</div>
+      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#e8a07a;margin:0 0 6px">${escHtml(d.tier)} tier &middot; ${escHtml(String(sig.siteSize || sig.pageCount || "?"))} pages</div>
       <div style="font:700 21px Georgia,serif;color:#f4f2ec;margin:0 0 5px">${escHtml((d.quote && d.quote.name) || "")}</div>
       <div style="font:400 13px Georgia,serif;color:rgba(244,242,236,.72)">${escHtml(EMAIL_TIER_DESC[d.tier] || "")}</div>
     </td></tr></table>`;
