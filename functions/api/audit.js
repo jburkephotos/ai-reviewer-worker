@@ -66,7 +66,7 @@ export async function onRequestPost(context) {
     // Notify Jeremy of EVERY audit run (private — reuses the lead Resend setup).
     // Fire-and-forget via waitUntil so the visitor's response is never delayed.
     if (env.RESEND_API_KEY && env.LEAD_TO && context.waitUntil) {
-      context.waitUntil(emailOwnerSummary(env, payload).catch(() => {}));
+      context.waitUntil(emailOwnerSummary(env, payload, runMeta(request, body, env)).catch(() => {}));
     }
 
     return json(payload);
@@ -696,9 +696,31 @@ function speedRead(s) {
   return `Slow — this is actively costing you visitors and search rankings.${lcp} Most people abandon a page that takes more than 3 seconds; a modern rebuild loads near-instantly.`;
 }
 
-async function emailOwnerSummary(env, d) {
-  const html = emailShell(d.url, emailScorecard(d) + emailFindings(d.report) + emailPhase1(d));
-  await sendEmail(env, `AI Review — ${safeHost(d.url)} — ${(d.score && d.score.grade) || ""} (${d.tier})`, html);
+async function emailOwnerSummary(env, d, meta) {
+  const html = emailShell(d.url, emailScorecard(d) + emailFindings(d.report) + emailPhase1(d) + emailRunMeta(meta));
+  const who = meta && meta.ownerRun ? " — YOU" : (meta && meta.where ? ` — ${meta.where}` : "");
+  await sendEmail(env, `AI Review — ${safeHost(d.url)} — ${(d.score && d.score.grade) || ""} (${d.tier})${who}`, html);
+}
+
+/* ---- run attribution: WHO ran this audit (answers "where are these coming from") ---- */
+function runMeta(request, body, env) {
+  const cf = request.cf || {};
+  return {
+    ownerRun: !!(env.OWNER_KEY && body && body.ok === env.OWNER_KEY),
+    where: [cf.city, cf.region, cf.country].filter(Boolean).join(", "),
+    org: cf.asOrganization || "",
+    ip: request.headers.get("cf-connecting-ip") || "",
+    src: (body && typeof body.src === "string" ? body.src.slice(0, 300) : ""),  // document.referrer from the front-end
+    ua: (request.headers.get("user-agent") || "").slice(0, 160),
+  };
+}
+function emailRunMeta(m) {
+  if (!m) return "";
+  const row = (k, v) => v ? `<tr><td style="padding:3px 12px 3px 0;font:600 11px monospace;color:#888;white-space:nowrap">${k}</td><td style="padding:3px 0;font:400 12px monospace;color:#555;word-break:break-all">${escHtml(v)}</td></tr>` : "";
+  return `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#eceae2" style="border-radius:3px;margin:22px 0 0"><tr><td style="padding:12px 16px">
+    <div style="font:600 10px monospace;letter-spacing:2px;text-transform:uppercase;color:${m.ownerRun ? "#2f4a3e" : "#b0481f"};margin:0 0 6px">${m.ownerRun ? "✓ Owner run — this was you" : "Visitor run"}</div>
+    <table cellpadding="0" cellspacing="0">${row("From", m.where)}${row("Network", m.org)}${row("IP", m.ip)}${row("Arrived via", m.src)}${row("Browser", m.ua)}</table>
+  </td></tr></table>`;
 }
 
 /* ========================================================================

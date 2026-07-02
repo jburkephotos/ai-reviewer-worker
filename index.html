@@ -287,7 +287,7 @@ async function run() {
     const res = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined })
+      body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined, src: ARRIVED || undefined })
     });
     const data = await res.json();
     clearInterval(tick); statusEl.classList.remove('show'); btn.disabled = false;
@@ -431,6 +431,8 @@ const OWNER = (() => {
     return localStorage.getItem('aiRevOwner') || null;
   } catch { return null; }
 })();
+// How this visitor ARRIVED (external referrer) — sent with runs so the owner email can say where traffic comes from.
+const ARRIVED = (() => { try { return document.referrer && !document.referrer.includes(location.host) ? document.referrer : ""; } catch { return ""; } })();
 
 /* ---- Turnstile (bot protection) — DORMANT until a sitekey is pasted below.
    To enable: Cloudflare dashboard → Turnstile → Add site → copy the SITE KEY here,
@@ -736,7 +738,7 @@ async function runDeepReport(d) {
   try {
     const res = await fetch('/api/deep', {
       method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined, ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
+      body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined, src: ARRIVED || undefined, ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
     });
     const data = await res.json();
     clearInterval(tick);

@@ -57,7 +57,7 @@ export async function onRequestPost(context) {
 
     // Jeremy gets a copy of every deep report that runs (private, best-effort).
     if (env.RESEND_API_KEY && env.LEAD_TO && context.waitUntil) {
-      context.waitUntil(emailOwnerDeep(env, payload, ctx).catch(() => {}));
+      context.waitUntil(emailOwnerDeep(env, payload, ctx, runMeta(request, body, env)).catch(() => {}));
     }
 
     return json(payload);
@@ -295,7 +295,28 @@ async function sitemapUrls(origin) {
 /* ---- owner notification: Jeremy gets every deep report, branded (private, best-effort) ----
    ctx = the summary {url,tier,score,signals,quote,report:{summary,surfaces}} passed from the
    front-end so the deep email can lead with the same scorecard + Phase 1 quote as the tool. */
-async function emailOwnerDeep(env, d, ctx) {
+/* ---- run attribution (mirror of audit.js) ---- */
+function runMeta(request, body, env) {
+  const cf = request.cf || {};
+  return {
+    ownerRun: !!(env.OWNER_KEY && body && body.ok === env.OWNER_KEY),
+    where: [cf.city, cf.region, cf.country].filter(Boolean).join(", "),
+    org: cf.asOrganization || "",
+    ip: request.headers.get("cf-connecting-ip") || "",
+    src: (body && typeof body.src === "string" ? body.src.slice(0, 300) : ""),
+    ua: (request.headers.get("user-agent") || "").slice(0, 160),
+  };
+}
+function emailRunMeta(m) {
+  if (!m) return "";
+  const row = (k, v) => v ? `<tr><td style="padding:3px 12px 3px 0;font:600 11px monospace;color:#888;white-space:nowrap">${k}</td><td style="padding:3px 0;font:400 12px monospace;color:#555;word-break:break-all">${escHtml(v)}</td></tr>` : "";
+  return `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#eceae2" style="border-radius:3px;margin:22px 0 0"><tr><td style="padding:12px 16px">
+    <div style="font:600 10px monospace;letter-spacing:2px;text-transform:uppercase;color:${m.ownerRun ? "#2f4a3e" : "#b0481f"};margin:0 0 6px">${m.ownerRun ? "✓ Owner run — this was you" : "Visitor run"}</div>
+    <table cellpadding="0" cellspacing="0">${row("From", m.where)}${row("Network", m.org)}${row("IP", m.ip)}${row("Arrived via", m.src)}${row("Browser", m.ua)}</table>
+  </td></tr></table>`;
+}
+
+async function emailOwnerDeep(env, d, ctx, meta) {
   const pagesHtml = (d.pages || []).filter(p => p.findings && p.findings.length).map(p => {
     let path; try { path = new URL(p.url).pathname || "/"; } catch { path = p.url; }
     const rows = p.findings.map(f => `<tr>
@@ -309,7 +330,8 @@ async function emailOwnerDeep(env, d, ctx) {
   const top = ctx ? (emailScorecard(ctx) + emailPhase1(ctx)) : "";
   const overall = d.overall ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:24px 0 16px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(d.overall)}</td></tr></table>` : "";
   const head = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;border-bottom:1px solid #d6d3c9;padding:0 0 8px;margin:26px 0 12px">The full page-by-page report</div>`;
-  await sendEmail(env, `AI Review DEEP — ${safeHost(d.url)}`, emailShell(d.url, top + overall + head + pagesHtml));
+  const who = meta && meta.ownerRun ? " — YOU" : (meta && meta.where ? ` — ${meta.where}` : "");
+  await sendEmail(env, `AI Review DEEP — ${safeHost(d.url)}${who}`, emailShell(d.url, top + overall + head + pagesHtml + emailRunMeta(meta)));
 }
 
 /* ---- branded email builders (mirror of audit.js; email-safe tables + inline styles) ---- */
