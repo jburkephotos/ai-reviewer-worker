@@ -287,7 +287,7 @@ async function run() {
     const res = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url, ts: await tsToken() })
+      body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined })
     });
     const data = await res.json();
     clearInterval(tick); statusEl.classList.remove('show'); btn.disabled = false;
@@ -420,6 +420,18 @@ function proofBand(){
 // Rebuilt-homepage preview renderer — NO LONGER auto-fired in the public funnel.
 // Replaced by the free one-off mockup OFFER (the checkbox in the lead form); Jeremy
 // builds those by hand. Kept here as the reference template for those mockups + the
+/* ---- OWNER MODE — Jeremy's bypass. Visit the tool once as /?owner=YOUR_KEY (the value
+   of the OWNER_KEY env var on the Pages project); it's remembered in this browser.
+   Effects: all rate limits are skipped server-side, and the single-page checker is
+   available immediately on load — no full audit needed first. ---- */
+const OWNER = (() => {
+  try {
+    const p = new URLSearchParams(location.search).get('owner');
+    if (p) { localStorage.setItem('aiRevOwner', p); history.replaceState(null, '', location.pathname); }
+    return localStorage.getItem('aiRevOwner') || null;
+  } catch { return null; }
+})();
+
 /* ---- Turnstile (bot protection) — DORMANT until a sitekey is pasted below.
    To enable: Cloudflare dashboard → Turnstile → Add site → copy the SITE KEY here,
    and add the SECRET KEY as env var TURNSTILE_SECRET on the Pages project. ---- */
@@ -565,7 +577,7 @@ function render(d) {
 
   // deep-report qualifying form (the gate to the full page-by-page report)
   h += deepReportForm(d);
-  h += singlePageTool();
+  if (!document.getElementById('ownertool')) h += singlePageTool();  // owner mode already shows it up top
 
   reportEl.innerHTML = h;
   reportEl.classList.add('show');
@@ -590,14 +602,15 @@ function wirePageTool(){
   const btn = document.getElementById('pt_btn');
   const input = document.getElementById('pt_url');
   const result = document.getElementById('pt_result');
-  if (!btn) return;
+  if (!btn || btn.dataset.wired) return;   // never double-bind (owner tool persists across renders)
+  btn.dataset.wired = "1";
   async function go(){
     const url = input.value.trim();
     if (!url){ input.focus(); return; }
     btn.disabled = true;
     result.innerHTML = `<div class="deepwait"><span class="dots">Reading that page</span></div>`;
     try {
-      const res = await fetch('/api/page', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ url, ts: await tsToken() }) });
+      const res = await fetch('/api/page', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined }) });
       const data = await res.json();
       btn.disabled = false;
       if (!res.ok || data.error){ result.innerHTML = `<div class="err">${esc(data.error || "Couldn't audit that page.")}</div>`; return; }
@@ -723,7 +736,7 @@ async function runDeepReport(d) {
   try {
     const res = await fetch('/api/deep', {
       method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ url, ts: await tsToken(), ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
+      body: JSON.stringify({ url, ts: await tsToken(), ok: OWNER || undefined, ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
     });
     const data = await res.json();
     clearInterval(tick);
@@ -791,6 +804,16 @@ function quoteBlock(d, pos) {
 
 btn.addEventListener('click', run);
 urlIn.addEventListener('keydown', e => { if (e.key === "Enter") run(); });
+
+// OWNER MODE: surface the single-page checker immediately — no full audit needed first.
+if (OWNER) {
+  const host = document.createElement('div');
+  host.id = 'ownertool';
+  host.style.margin = '28px 0';
+  host.innerHTML = singlePageTool();
+  reportEl.parentNode.insertBefore(host, reportEl);
+  wirePageTool();
+}
 </script>
 </body>
 </html>

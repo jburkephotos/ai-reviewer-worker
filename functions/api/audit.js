@@ -91,6 +91,8 @@ export async function onRequestPost(context) {
 const RL_MEM = new Map();
 async function guardRequest(context, body, kind, limits) {
   const { request, env } = context;
+  // OWNER BYPASS: Jeremy's key (env OWNER_KEY) skips every check — no limits, curl-able.
+  if (env.OWNER_KEY && body && body.ok === env.OWNER_KEY) return null;
   const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
 
   // 1) same-origin
