@@ -676,8 +676,11 @@ async function pageSpeed(url, env) {
   try {
     const key = env.PAGESPEED_API_KEY ? `&key=${env.PAGESPEED_API_KEY}` : "";
     const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&category=performance${key}`;
+    // PSI runs a real Lighthouse pass and routinely needs 25-40s on heavy pages.
+    // It runs concurrently with the Claude call, so a generous window costs little —
+    // 22s was cutting it off and silently hiding the Speed bar on slower sites.
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 22000);
+    const t = setTimeout(() => ctrl.abort(), 45000);
     const r = await fetch(api, { signal: ctrl.signal });
     clearTimeout(t);
     if (!r.ok) return null;
