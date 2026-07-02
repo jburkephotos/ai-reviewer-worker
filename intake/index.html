@@ -200,6 +200,9 @@
     <textarea data-q="Anything else"></textarea>
   </section>
 
+  <!-- honeypot: invisible to humans; bots that fill it get silently discarded -->
+  <input type="text" id="hp-field" name="company_url" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-5000px;top:-5000px;opacity:0;height:1px;width:1px">
+
   <div class="bar">
     <p class="note" id="note">When you're done, hit <b>Send</b> — your answers go straight to Jeremy, nothing else to do. (Prefer to send it yourself? Use Copy or Download.)</p>
     <div class="btns">
@@ -214,6 +217,7 @@
 <script>
 function collect(){
   const business=(document.querySelector('[data-q="Business name"]').value||"").trim();
+  const hp=(document.getElementById('hp-field')||{value:''}).value;
   const sections=[];
   document.querySelectorAll('section').forEach(sec=>{
     const name=sec.querySelector('h2').textContent.replace(/\s+—.*/,'').trim();
@@ -234,7 +238,7 @@ function collect(){
     }
     if(items.length) sections.push({name:name,items:items});
   });
-  return {business:business,sections:sections};
+  return {business:business,sections:sections,hp:hp};
 }
 function genText(d){
   let lines=["# Project Intake — "+(d.business||"your business"),""];

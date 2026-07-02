@@ -287,7 +287,7 @@ async function run() {
     const res = await fetch('/api/audit', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url, ts: await tsToken() })
     });
     const data = await res.json();
     clearInterval(tick); statusEl.classList.remove('show'); btn.disabled = false;
@@ -420,6 +420,41 @@ function proofBand(){
 // Rebuilt-homepage preview renderer — NO LONGER auto-fired in the public funnel.
 // Replaced by the free one-off mockup OFFER (the checkbox in the lead form); Jeremy
 // builds those by hand. Kept here as the reference template for those mockups + the
+/* ---- Turnstile (bot protection) — DORMANT until a sitekey is pasted below.
+   To enable: Cloudflare dashboard → Turnstile → Add site → copy the SITE KEY here,
+   and add the SECRET KEY as env var TURNSTILE_SECRET on the Pages project. ---- */
+const TURNSTILE_SITEKEY = "";
+function loadTurnstile(){
+  return new Promise(res => {
+    if (window.turnstile) return res();
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    s.onload = () => res();
+    s.onerror = () => res();
+    document.head.appendChild(s);
+  });
+}
+async function tsToken(){
+  if (!TURNSTILE_SITEKEY) return null;
+  await loadTurnstile();
+  if (!window.turnstile) return null;
+  return await new Promise(resolve => {
+    let holder = document.getElementById('tsbox');
+    if (!holder){ holder = document.createElement('div'); holder.id = 'tsbox'; holder.style.cssText = 'position:fixed;bottom:10px;right:10px;z-index:60'; document.body.appendChild(holder); }
+    holder.innerHTML = '';
+    try {
+      window.turnstile.render(holder, {
+        sitekey: TURNSTILE_SITEKEY,
+        appearance: 'interaction-only',
+        callback: t => resolve(t),
+        'error-callback': () => resolve(null),
+        'timeout-callback': () => resolve(null),
+      });
+    } catch { resolve(null); }
+    setTimeout(() => resolve(null), 20000);
+  });
+}
+
 // first Starter Kit skin. runPreview() is intentionally unused by the live flow.
 function hostOf(u){ try { return new URL(u).host; } catch { return u; } }
 function hexLighten(hex, amt){
@@ -562,7 +597,7 @@ function wirePageTool(){
     btn.disabled = true;
     result.innerHTML = `<div class="deepwait"><span class="dots">Reading that page</span></div>`;
     try {
-      const res = await fetch('/api/page', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ url }) });
+      const res = await fetch('/api/page', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ url, ts: await tsToken() }) });
       const data = await res.json();
       btn.disabled = false;
       if (!res.ok || data.error){ result.innerHTML = `<div class="err">${esc(data.error || "Couldn't audit that page.")}</div>`; return; }
@@ -688,7 +723,7 @@ async function runDeepReport(d) {
   try {
     const res = await fetch('/api/deep', {
       method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ url, ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
+      body: JSON.stringify({ url, ts: await tsToken(), ctx: { url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } } })
     });
     const data = await res.json();
     clearInterval(tick);

@@ -4,6 +4,8 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   try {
     const data = await request.json();
+    // honeypot: humans never see the hp field — if it's filled, a bot did it. Pretend success.
+    if (data && data.hp) return json({ ok: true });
     const biz = String((data && data.business) || "a client").slice(0, 120).trim() || "a client";
     if (!env.RESEND_API_KEY || !env.LEAD_TO) {
       return json({ ok: false, error: "Email isn't configured." });
