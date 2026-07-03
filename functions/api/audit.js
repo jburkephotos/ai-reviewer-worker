@@ -281,7 +281,9 @@ function analyzeSignals(crawl) {
 
   // alt text coverage on the home page (cheap proxy for catalog hygiene)
   const imgs = [...homeRaw.matchAll(/<img\b[^>]*>/gi)].map(m => m[0]);
-  const imgsWithAlt = imgs.filter(t => /\balt\s*=\s*["'][^"']+["']/i.test(t)).length;
+  // An alt ATTRIBUTE counts — alt="" is the correct accessibility marking for
+  // decorative images, so it shouldn't be penalized as "missing alt text".
+  const imgsWithAlt = imgs.filter(t => /\balt\s*=/i.test(t)).length;
 
   // hard technical signals
   const isHttps = crawl.origin.startsWith("https");

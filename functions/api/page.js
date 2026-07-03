@@ -40,10 +40,15 @@ async function analyzePage(env, site, page) {
   const text = stripToText(page.html).slice(0, 3500);
 
   const hasSchema = /application\/ld\+json/i.test(page.html);
-  const schemaTypes = [...page.html.matchAll(/"@type"\s*:\s*"([^"]+)"/gi)].map(m => m[1]);
+  // UNIQUE types, generous cap — slicing raw matches at 6 hid FAQPage/Menu markup that
+  // appeared after the site-wide entity graph, producing false "missing schema" criticals.
+  const schemaTypes = [...new Set([...page.html.matchAll(/"@type"\s*:\s*"([^"]+)"/gi)].map(m => m[1]))];
+  const hasFaqSchema = schemaTypes.some(t => /FAQPage/i.test(t));
+  const hasMenuSchema = schemaTypes.some(t => /^Menu(Item|Section)?$/i.test(t));
   const hasMeta = /<meta[^>]+name=["']description["'][^>]+content=["'][^"']{20,}/i.test(page.html);
   const imgs = (page.html.match(/<img\b[^>]*>/gi) || []);
-  const imgsAlt = imgs.filter(t => /\balt\s*=\s*["'][^"']+["']/i.test(t)).length;
+  // An alt ATTRIBUTE counts — alt="" is the correct marking for decorative images.
+  const imgsAlt = imgs.filter(t => /\balt\s*=/i.test(t)).length;
   const qHeadings = (page.html.match(/<h[2-4][^>]*>\s*[^<]*\?\s*<\/h[2-4]>/gi) || []).length;
 
   const system = `You are writing one page's section of an in-depth website discoverability report for Jeremy Burke / J. Burke Photos — a 20-year editorial publisher who fixes how Oregon Coast businesses appear in Google and AI search (ChatGPT, Perplexity, Gemini, Google AI Overviews).
@@ -68,7 +73,7 @@ Return ONLY valid JSON, no fences:
   const user = `SITE: ${site}
 THIS PAGE: ${page.url}
 TITLE: "${title}"
-DETERMINISTIC FACTS (don't contradict): schema=${hasSchema} types=[${schemaTypes.slice(0,6).join(", ")}] meta=${hasMeta} images=${imgs.length} withAlt=${imgsAlt} questionHeadings=${qHeadings}
+DETERMINISTIC FACTS (don't contradict): schema=${hasSchema} types=[${schemaTypes.slice(0,14).join(", ")}] faqPageSchema=${hasFaqSchema} menuSchema=${hasMenuSchema} meta=${hasMeta} images=${imgs.length} withAlt=${imgsAlt} questionHeadings=${qHeadings}
 
 PAGE TEXT:
 ${text}`;
