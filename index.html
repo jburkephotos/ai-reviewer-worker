@@ -369,7 +369,7 @@ function scorecard(d, r){
   m += `</div>`;
   // Brand & voice — one honest sentence from the same judgment read (no fake metric,
   // no locked bar): the tease for the human Reader Panel that comes with the full report.
-  if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my Reader Panel — <strong>Mary</strong> the Skimmer, <strong>Frank</strong> the Skeptic, <strong>Dana</strong> the Price&#8209;Shopper, <strong>Tom</strong> the Ready Buyer, <strong>Rosa</strong> the Referrer, and <strong>Walt</strong> the Plain Reader. Their honest read on your site comes with the free full report below.</span></div>`;
+  if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my <strong>AI Reader Panel</strong> — <strong>Mary</strong> the Skimmer, <strong>Frank</strong> the Skeptic, <strong>Dana</strong> the Price&#8209;Shopper, <strong>Tom</strong> the Ready Buyer, <strong>Rosa</strong> the Referrer, and <strong>Walt</strong> the Plain Reader — plus a top&#8209;tier copy editor. Their honest read on your site comes with the free full report below.</span></div>`;
   m += `${checklist(d.signals || {})}</div>`;
   return m;
 }
@@ -656,7 +656,7 @@ function deepReportForm(d) {
   return `<div class="deepform" id="deepform">
     <div class="qlab">The full report &middot; 100% free</div>
     <div class="qhead">Get the complete page-by-page report — free.</div>
-    <div class="qsub">Everything above is the summary. The full report covers <strong>every page and every fix</strong> — the exact structured data, titles, and copy changes — plus <strong>The Reader Panel</strong>: six honest readers react to your site in their own words. No cost, no sales call, nothing to buy. It builds itself and lands in your inbox in a few minutes.</div>
+    <div class="qsub">Everything above is the summary. The full report covers <strong>every page and every fix</strong> — the exact structured data, titles, and copy changes — plus <strong>The AI Reader Panel</strong>: six AI readers — and a top-tier copy editor — react to your site in their own words. No cost, no sales call, nothing to buy. It builds itself and lands in your inbox in a few minutes.</div>
     <div class="ff">
       <div class="ffrow">
         <label>Email<input type="email" id="f_email" autocomplete="email" placeholder="you@yourbusiness.com"></label>

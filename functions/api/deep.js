@@ -359,8 +359,8 @@ function emailPanel(panel) {
   const rows = panel.map(p => `<tr>
     <td valign="top" style="padding:9px 14px 9px 0;white-space:nowrap"><span style="font:700 14px Georgia,serif;color:#1a1d1c">${escHtml(p.name)}</span><br><span style="font:600 10px monospace;letter-spacing:1px;text-transform:uppercase;color:#d4622a">${escHtml(p.role)}</span></td>
     <td valign="top" style="padding:9px 0;border-bottom:1px solid #ece9e0;font:italic 14px/1.5 Georgia,serif;color:#333">&ldquo;${escHtml(p.comment)}&rdquo;</td></tr>`).join("");
-  return `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:26px 0 4px">The Reader Panel</div>
-  <div style="font:400 13px Georgia,serif;color:#777;margin:0 0 10px">Six readers who judge websites so customers don't have to — reacting to your site in their own words.</div>
+  return `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:26px 0 4px">The AI Reader Panel</div>
+  <div style="font:400 13px Georgia,serif;color:#777;margin:0 0 10px">Six AI readers who judge websites the way real customers do — reacting to your site in their own words.</div>
   <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border:1px solid #e2dfd6;border-radius:3px"><tr><td style="padding:6px 18px 10px"><table width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr></table>`;
 }
 async function sendEmailTo(env, to, subject, html) {
