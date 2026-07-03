@@ -71,6 +71,7 @@ Return ONLY valid JSON, no fences:
 2-5 findings for this page. If the page is genuinely clean, it's fine to return 1 finding or note a strength as a low-priority item. Order most important first.`;
 
   const user = `SITE: ${site}
+TODAY'S DATE: ${new Date().toISOString().slice(0, 10)} (content dated ${new Date().getFullYear()} is CURRENT, not future)
 THIS PAGE: ${page.url}
 TITLE: "${title}"
 DETERMINISTIC FACTS (don't contradict): schema=${hasSchema} types=[${schemaTypes.slice(0,14).join(", ")}] faqPageSchema=${hasFaqSchema} menuSchema=${hasMenuSchema} meta=${hasMeta} images=${imgs.length} withAlt=${imgsAlt} questionHeadings=${qHeadings}

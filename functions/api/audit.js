@@ -373,7 +373,10 @@ function analyzeSignals(crawl) {
     const yrs = stripToText(p.html).match(/(?<![\d.$])(20[12]\d)(?![\d.])/g);
     if (yrs) for (const y of yrs) { const n = +y; if (n > (newestYear || 0)) newestYear = n; }
   }
-  const looksStale = newestYear !== null && newestYear <= 2024; // nothing dated 2025+
+  // Stale = nothing dated within the last two calendar years (computed, not hardcoded,
+  // so this doesn't rot as years pass).
+  const nowYear = new Date().getFullYear();
+  const looksStale = newestYear !== null && newestYear <= nowYear - 2;
 
   return {
     pageCount: all.length,        // note: capped at MAX_PAGES; flagged below if hit cap
@@ -605,7 +608,8 @@ DETERMINISTIC SIGNALS (ground truth — do not contradict):
 - Organization schema present: ${signals.hasOrganization}
 - question-led headings found: ${signals.questionHeadings}
 - pages with a real meta description: ${signals.pagesWithMeta}/${signals.pageCount}
-- newest year referenced on site: ${signals.newestYear || "none found"}${signals.looksStale ? " (looks stale — nothing dated 2025+)" : ""}
+- TODAY'S DATE: ${new Date().toISOString().slice(0, 10)} — the current year is ${new Date().getFullYear()}. Content dated ${new Date().getFullYear()} is CURRENT, not forward-looking or premature.
+- newest year referenced on site: ${signals.newestYear || "none found"}${signals.looksStale ? ` (looks stale — nothing dated ${new Date().getFullYear() - 1} or later)` : ""}
 - home page images: ${signals.homeImgCount}, with alt text: ${signals.homeImgWithAlt}
 - home <title>: "${signals.homeTitle}"
 

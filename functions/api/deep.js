@@ -180,6 +180,7 @@ Return ONLY valid JSON, no fences:
 2-5 findings for this page. If the page is genuinely clean, it's fine to return 1 finding or note a strength as a low-priority item. Order most important first.`;
 
   const user = `SITE: ${site}
+TODAY'S DATE: ${new Date().toISOString().slice(0, 10)} (content dated ${new Date().getFullYear()} is CURRENT, not future)
 THIS PAGE: ${page.url}
 TITLE: "${title}"
 DETERMINISTIC FACTS (don't contradict): schema=${hasSchema} types=[${schemaTypes.slice(0,14).join(", ")}] faqPageSchema=${hasFaqSchema} menuSchema=${hasMenuSchema} meta=${hasMeta} images=${imgs.length} withAlt=${imgsAlt} questionHeadings=${qHeadings}
@@ -202,7 +203,7 @@ async function synthesize(env, site, pages) {
   const digest = pages.map(p =>
     `${p.url} (${p.role}): ${p.findings.map(f => f.title).join("; ")}`).join("\n");
   const system = `You are writing the 3-4 sentence opening verdict for an in-depth website report by Jeremy Burke (Oregon Coast publisher who fixes AI-search visibility). Plain, specific, warm, anti-slop, no invented facts. Name the single biggest pattern across the whole site and the highest-leverage thing to fix first. Return plain text only, no JSON, no fences.`;
-  const user = `SITE: ${site}\nPER-PAGE FINDINGS:\n${digest}`;
+  const user = `SITE: ${site}\nTODAY'S DATE: ${new Date().toISOString().slice(0, 10)} (content dated ${new Date().getFullYear()} is CURRENT, not future)\nPER-PAGE FINDINGS:\n${digest}`;
   const data = await callClaude(env, system, user, 400);
   return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
 }
