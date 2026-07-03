@@ -497,6 +497,20 @@ function emailPhase1(d) {
     </td></tr></table>`;
   }
   const p1 = (q.phases && q.phases[0]) || {};
+  // A-grade sites get the honest offer — a design refresh, not a rescue.
+  if (d.score && d.score.pct >= 90) {
+    return `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border:1px solid #d6d3c9;border-radius:3px;margin:24px 0 0"><tr><td style="padding:22px 24px;border-left:4px solid #2f4a3e">
+      <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 8px">Keeping an A sharp</div>
+      <div style="font:700 21px Georgia,serif;color:#1a1d1c;margin:0 0 8px">You don't need a rescue — maybe a refresh.</div>
+      <div style="font:400 14px/1.5 Georgia,serif;color:#444;margin:0 0 16px">Your site already reads clean to the machines — rare air (barely 1 in 10 sites we measure earns an A). Whatever's flagged above is polish. But if the <em>look</em> is due for its next chapter — modern design, fresh photography, the same machine-readable bones — that's a design refresh.</div>
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td valign="middle" style="font:700 26px Georgia,serif;color:#1a1d1c">$${(p1.price || 0).toLocaleString()}</td>
+        <td valign="middle" align="right"><a href="${cta}" style="background:#1a1d1c;color:#f4f2ec;text-decoration:none;font:600 12px monospace;letter-spacing:1px;text-transform:uppercase;padding:12px 24px;border-radius:2px">Let's talk &rarr;</a></td>
+      </tr></table>
+      ${q.photo ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0"><tr><td bgcolor="#eef1ec" style="border-radius:2px;padding:10px 13px;font:400 13px Georgia,serif;color:#2f4a3e">&#128247; ${escHtml(q.photo)}</td></tr></table>` : ""}
+      <div style="font:italic 13px Georgia,serif;color:#777;margin:14px 0 0">And if you'd rather leave a good thing alone — that's a legitimate call too. You earned the A.</div>
+    </td></tr></table>`;
+  }
   return `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border:1px solid #d6d3c9;border-radius:3px;margin:24px 0 0"><tr><td style="padding:22px 24px;border-left:4px solid #d4622a">
     <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#d4622a;margin:0 0 8px">Where to start</div>
     <div style="font:700 21px Georgia,serif;color:#1a1d1c;margin:0 0 8px">Phase 1 — a redesigned, AI-ready site</div>

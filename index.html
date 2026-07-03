@@ -774,6 +774,22 @@ function quoteBlock(d, pos) {
     </div>`;
   }
   const p1 = d.quote.phases[0];
+
+  // A-grade sites don't need a rescue — pitching "every critical fix" at an A
+  // contradicts the report above it. They get the honest offer: a design refresh.
+  if (d.score && d.score.pct >= 90) {
+    return `<div class="quote">
+      <div class="qlab">Keeping an A sharp</div>
+      <div class="qhead">You don't need a rescue. Maybe a refresh.</div>
+      <div class="qsub">Your site already reads clean to the machines — rare air (barely 1 in 10 sites we measure earns an A). Whatever's flagged above is polish, and any competent person can knock it out. But if the <em>look</em> is due for its next chapter — modern design, fresh photography, the same machine-readable bones — that's a design refresh, and it's what I do best.</div>
+      <div class="phases"><div class="phase phase-hero"><div class="pn">Design refresh</div>
+        <div class="pwhat">A fresh, modern face on your already-solid foundation — design, layout, and imagery, with every point above fixed along the way<span class="who">Nothing goes live without your okay</span></div>
+        <div class="pprice">${money(p1.price)}</div></div></div>
+      ${d.quote.photo?`<div class="photo">📷 ${esc(d.quote.photo)}</div>`:""}
+      <div class="qnextnote">And if you'd rather leave a good thing alone — that's a legitimate call too. You earned the A.</div>
+    </div>`;
+  }
+
   const later = d.quote.phases.slice(1);
   const laterHtml = later.length ? `<div class="qnext">
     <span class="qnextlab">Then, after we prove Phase 1</span>
