@@ -539,6 +539,7 @@ You are given DETERMINISTIC signals already measured (trust these as ground trut
 Return ONLY valid JSON, no markdown fences, in this exact shape:
 {
   "summary": "2-3 sentence plain-language verdict — what's the single biggest thing costing them visibility right now",
+  "voice": "ONE honest sentence about how this site's COPY sounds to a human reader — its voice and personality (or lack of one), grounded in its actual words. Not SEO; how it READS. Plain, specific, fair.",
   "surfaces": {
     "organic": "1-2 sentences on classic SEO health",
     "answer":  "1-2 sentences on AI-search readiness — the surface that matters most",

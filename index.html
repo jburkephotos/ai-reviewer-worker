@@ -67,6 +67,10 @@
   .benchmark .bm-opp{font-size:14.5px;line-height:1.5;color:rgba(26,29,28,.8);margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
   .benchmark .bm-src{font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.04em;color:rgba(26,29,28,.45);margin-top:10px}
   .meters{display:grid;gap:16px}
+  .voicetease{margin:18px 0 4px;padding:14px 16px;background:rgba(63,140,134,.07);border-left:3px solid var(--tide,#3f8c86);border-radius:2px}
+  .voicetease .vlab{display:block;font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#3f8c86;margin-bottom:6px}
+  .voicetease em{display:block;font-size:15.5px;line-height:1.5;color:#1a1d1c;margin-bottom:8px}
+  .voicetease .vnote{display:block;font-size:13px;line-height:1.5;color:rgba(26,29,28,.6)}
   .meter .mtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
   .meter .mname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mark);font-weight:600}
   .meter .mval{font-size:15px;font-weight:700}
@@ -362,7 +366,11 @@ function scorecard(d, r){
       ${row.read ? `<div class="mread">${esc(row.read)}</div>` : ""}
     </div>`;
   }
-  m += `</div>${checklist(d.signals || {})}</div>`;
+  m += `</div>`;
+  // Brand & voice — one honest sentence from the same judgment read (no fake metric,
+  // no locked bar): the tease for the human Reader Panel that comes with the full report.
+  if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my Reader Panel — six honest readers and a top-tier copy editor. Meet them in your free full report below.</span></div>`;
+  m += `${checklist(d.signals || {})}</div>`;
   return m;
 }
 function checklist(s){
@@ -642,30 +650,19 @@ function renderPageResult(host, d){
 
 function deepReportForm(d) {
   if (d.quote.enterprise) return ""; // enterprise routes to a call instead
+  // One field, "free" said plainly, no qualifying questions — the old budget buttons
+  // made the report look like a sales funnel (real field feedback: "it sounded like
+  // it cost money"). The report generates itself and lands in their inbox.
   return `<div class="deepform" id="deepform">
-    <div class="qlab">Your full report + a free homepage redesign</div>
-    <div class="qhead">Want the full breakdown — and to see your homepage reimagined?</div>
-    <div class="qsub">What you see above is the summary, and it's yours to keep. Leave your details and I'll send the complete page-by-page report — every page, every fix, the exact structured data. And if you'd like, I'll personally mock up a new version of your homepage so you can see it — free, no obligation, yours to keep whether you do it yourself, hand it to someone else, or work with me. I share what I've learned because I want Oregon Coast businesses found and cited by AI search.</div>
+    <div class="qlab">The full report &middot; 100% free</div>
+    <div class="qhead">Get the complete page-by-page report — free.</div>
+    <div class="qsub">Everything above is the summary. The full report covers <strong>every page and every fix</strong> — the exact structured data, titles, and copy changes — plus <strong>The Reader Panel</strong>: six honest readers react to your site in their own words. No cost, no sales call, nothing to buy. It builds itself and lands in your inbox in a few minutes.</div>
     <div class="ff">
       <div class="ffrow">
-        <label>First name<input type="text" id="f_name" autocomplete="given-name"></label>
-        <label>Email<input type="email" id="f_email" autocomplete="email"></label>
+        <label>Email<input type="email" id="f_email" autocomplete="email" placeholder="you@yourbusiness.com"></label>
       </div>
-      <label>Business<input type="text" id="f_biz" autocomplete="organization"></label>
-      <label>What's working well on your site right now? <span class="opt">(optional)</span><textarea id="f_works" rows="2"></textarea></label>
-      <label>What's not working, or frustrating you? <span class="opt">(optional)</span><textarea id="f_broken" rows="2"></textarea></label>
-      <div class="budget">
-        <span class="blab">Roughly what could you invest in fixing this?</span>
-        <div class="bopts" id="f_budget">
-          <button type="button" data-v="Just exploring">Just exploring</button>
-          <button type="button" data-v="Under $1k">Under $1k</button>
-          <button type="button" data-v="$1–3k">$1–3k</button>
-          <button type="button" data-v="$3k+">$3k+</button>
-          <button type="button" data-v="Not sure yet">Not sure yet</button>
-        </div>
-      </div>
-      <label class="ffcheck" style="display:flex;align-items:center;gap:9px;text-transform:none;letter-spacing:0;font-family:inherit;font-size:14px;color:var(--paper);cursor:pointer"><input type="checkbox" id="f_mockup" checked style="width:auto;margin:0;flex:none;accent-color:#d4622a"> Yes — design me a free homepage mockup</label>
-      <button class="run ffsubmit" id="f_submit">Send my report + homepage redesign</button>
+      <label class="ffcheck" style="display:flex;align-items:center;gap:9px;text-transform:none;letter-spacing:0;font-family:inherit;font-size:14px;color:var(--paper);cursor:pointer"><input type="checkbox" id="f_mockup" checked style="width:auto;margin:0;flex:none;accent-color:#d4622a"> Also mock up my homepage — free too</label>
+      <button class="run ffsubmit" id="f_submit">Email me the full report — free</button>
       <div class="ffmsg" id="f_msg"></div>
     </div>
   </div>`;
@@ -674,46 +671,37 @@ function deepReportForm(d) {
 function wireDeepForm(d) {
   const form = document.getElementById('deepform');
   if (!form) return;
-  let budget = "";
-  form.querySelectorAll('#f_budget button').forEach(b => {
-    b.addEventListener('click', () => {
-      form.querySelectorAll('#f_budget button').forEach(x => x.classList.remove('sel'));
-      b.classList.add('sel'); budget = b.dataset.v;
-    });
-  });
   document.getElementById('f_submit').addEventListener('click', async () => {
-    const name = document.getElementById('f_name').value.trim();
     const email = document.getElementById('f_email').value.trim();
-    const biz = document.getElementById('f_biz').value.trim();
     const msg = document.getElementById('f_msg');
-    if (!name || !email) { msg.textContent = "First name and email, please — that's all I need."; msg.className = "ffmsg warn"; return; }
-    msg.textContent = "Sending…"; msg.className = "ffmsg";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = "Just a working email — that's all it takes."; msg.className = "ffmsg warn"; return; }
+    const btn = document.getElementById('f_submit');
+    btn.disabled = true;
+    msg.textContent = "Building your report — reading every page, gathering the panel…";
+    msg.className = "ffmsg";
     try {
-      const res = await fetch('/api/lead', {
+      const res = await fetch('/api/deep', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          url: d.url, tier: d.tier, score: d.score,
-          name, email, business: biz,
-          works: document.getElementById('f_works').value.trim(),
-          broken: document.getElementById('f_broken').value.trim(),
-          budget,
+          url: d.url, email,
           mockup: document.getElementById('f_mockup').checked,
+          ts: await tsToken(), ok: OWNER || undefined, src: ARRIVED || undefined,
+          ctx: { url: d.url, tier: d.tier, score: d.score, signals: d.signals, quote: d.quote, speed: d.speed, report: { summary: d.report && d.report.summary, surfaces: d.report && d.report.surfaces } }
         })
       });
-      if (res.ok) {
-        const wantsMockup = document.getElementById('f_mockup').checked;
-        msg.innerHTML = wantsMockup
-          ? "Got it — building your full page-by-page report now, and I'll personally design your homepage mockup and email it over."
-          : "Got it — building your full page-by-page report now. This takes a minute…";
-        msg.className = "ffmsg good";
-        document.getElementById('f_submit').disabled = true;
-        runDeepReport(d);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && (data.ok || data.emailed)) {
+        form.innerHTML = `<div class="qlab">On its way</div>
+          <div class="qhead">✓ Your full report is headed to ${esc(email)}.</div>
+          <div class="qsub">Give it a few minutes — and check spam the first time, then drag it to your inbox. Everything in it is yours to keep: fix it yourself, hand it to anyone, or just reply to the email and it comes straight to me.</div>`;
       } else {
-        msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";
+        btn.disabled = false;
+        msg.textContent = data.error || "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it personally.";
         msg.className = "ffmsg warn";
       }
     } catch {
-      msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it over.";
+      btn.disabled = false;
+      msg.textContent = "Something hiccupped — email me directly at jlburkephotos@gmail.com and I'll send it personally.";
       msg.className = "ffmsg warn";
     }
   });
