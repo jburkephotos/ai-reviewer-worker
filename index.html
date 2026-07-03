@@ -369,7 +369,7 @@ function scorecard(d, r){
   m += `</div>`;
   // Brand & voice — one honest sentence from the same judgment read (no fake metric,
   // no locked bar): the tease for the human Reader Panel that comes with the full report.
-  if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my Reader Panel — six honest readers and a top-tier copy editor. Meet them in your free full report below.</span></div>`;
+  if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my Reader Panel — <strong>Mary</strong> the Skimmer, <strong>Frank</strong> the Skeptic, <strong>Dana</strong> the Price&#8209;Shopper, <strong>Tom</strong> the Ready Buyer, <strong>Rosa</strong> the Referrer, and <strong>Walt</strong> the Plain Reader. Their honest read on your site comes with the free full report below.</span></div>`;
   m += `${checklist(d.signals || {})}</div>`;
   return m;
 }
