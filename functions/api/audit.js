@@ -700,24 +700,36 @@ function surfaceScores(s) {
    audit always completes without a speed reading rather than erroring.
    ===================================================================== */
 async function pageSpeed(url, env) {
-  try {
-    const key = env.PAGESPEED_API_KEY ? `&key=${env.PAGESPEED_API_KEY}` : "";
-    const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&category=performance${key}`;
-    // PSI runs a real Lighthouse pass and routinely needs 25-40s on heavy pages.
-    // It runs concurrently with the Claude call, so a generous window costs little —
-    // 22s was cutting it off and silently hiding the Speed bar on slower sites.
+  const key = env.PAGESPEED_API_KEY ? `&key=${env.PAGESPEED_API_KEY}` : "";
+  const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&category=performance${key}`;
+  // PSI runs a real Lighthouse pass (25-40s on heavy pages) and is flaky — it 429s on
+  // bursts and 5xx's transiently, which silently dropped the Speed bar for a whole run.
+  // So we retry ONCE on a fast failure (non-2xx returns in <1s), but NOT on a timeout
+  // (a genuine slow page won't get faster on a retry, and we can't blow the budget).
+  // Runs concurrently with the Claude call, so two attempts still fit comfortably.
+  for (let attempt = 0; attempt < 2; attempt++) {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 45000);
-    const r = await fetch(api, { signal: ctrl.signal });
-    clearTimeout(t);
-    if (!r.ok) return null;
-    const d = await r.json();
-    const perf = d && d.lighthouseResult && d.lighthouseResult.categories && d.lighthouseResult.categories.performance;
-    if (!perf || perf.score == null) return null;
-    const lcpA = (d.lighthouseResult.audits || {})["largest-contentful-paint"] || {};
-    return { score: Math.round(perf.score * 100), lcp: lcpA.displayValue || null, lcpMs: lcpA.numericValue || null };
-  } catch { return null; }
+    const t = setTimeout(() => ctrl.abort(), 40000);
+    try {
+      const r = await fetch(api, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) {
+        if (attempt === 0 && (r.status === 429 || r.status >= 500)) { await sleep(1500); continue; }
+        return null;
+      }
+      const d = await r.json();
+      const perf = d && d.lighthouseResult && d.lighthouseResult.categories && d.lighthouseResult.categories.performance;
+      if (!perf || perf.score == null) return null;
+      const lcpA = (d.lighthouseResult.audits || {})["largest-contentful-paint"] || {};
+      return { score: Math.round(perf.score * 100), lcp: lcpA.displayValue || null, lcpMs: lcpA.numericValue || null };
+    } catch {
+      clearTimeout(t);
+      return null; // aborted/timed out — a retry won't fit the budget
+    }
+  }
+  return null;
 }
+function sleep(ms) { return new Promise((res) => setTimeout(res, ms)); }
 function speedRead(s) {
   if (!s) return null;
   const lcp = s.lcp ? ` Its largest element takes ${s.lcp} to appear on mobile.` : "";
