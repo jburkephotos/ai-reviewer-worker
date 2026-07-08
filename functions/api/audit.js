@@ -708,14 +708,15 @@ async function pageSpeed(url, env) {
   // (a genuine slow page won't get faster on a retry, and we can't blow the budget).
   // Runs concurrently with the Claude call, so two attempts still fit comfortably.
   for (let attempt = 0; attempt < 2; attempt++) {
+    let timedOut = false;
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 40000);
+    const t = setTimeout(() => { timedOut = true; ctrl.abort(); }, 40000);
     try {
       const r = await fetch(api, { signal: ctrl.signal });
       clearTimeout(t);
       if (!r.ok) {
         if (attempt === 0 && (r.status === 429 || r.status >= 500)) { await sleep(1500); continue; }
-        return null;
+        return null; // PSI rate-limit/error is NOT the site's fault — no score, hide the bar
       }
       const d = await r.json();
       const perf = d && d.lighthouseResult && d.lighthouseResult.categories && d.lighthouseResult.categories.performance;
@@ -724,7 +725,12 @@ async function pageSpeed(url, env) {
       return { score: Math.round(perf.score * 100), lcp: lcpA.displayValue || null, lcpMs: lcpA.numericValue || null };
     } catch {
       clearTimeout(t);
-      return null; // aborted/timed out — a retry won't fit the budget
+      // A genuine TIMEOUT means the page couldn't finish loading in 40s on mobile — that
+      // is itself a failing speed signal, so we surface an honest low score (clearly
+      // labelled as inferred from the timeout, not a measured PSI reading). Other errors
+      // (network) aren't the site's fault → null.
+      if (timedOut) return { score: 20, lcp: null, lcpMs: null, timedOut: true };
+      return null;
     }
   }
   return null;
@@ -732,6 +738,7 @@ async function pageSpeed(url, env) {
 function sleep(ms) { return new Promise((res) => setTimeout(res, ms)); }
 function speedRead(s) {
   if (!s) return null;
+  if (s.timedOut) return `Slow — the page didn't finish loading within 40 seconds on mobile, so Google's speed test couldn't complete. A page that can't be measured in time is a page real visitors abandon; a modern rebuild loads near-instantly.`;
   const lcp = s.lcp ? ` Its largest element takes ${s.lcp} to appear on mobile.` : "";
   if (s.score >= 90) return `Fast — the page loads quickly on mobile, so speed isn't costing you visitors.${lcp}`;
   if (s.score >= 50) return `Middling — there's real lag on mobile.${lcp} Faster pages hold more visitors and Google rewards them.`;
