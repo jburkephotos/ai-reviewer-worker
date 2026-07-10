@@ -366,6 +366,10 @@ function analyzeSignals(crawl) {
   // Tag-stripping counter: themes routinely wrap heading text in <span>/<strong>, which
   // the old single-text-node regex missed — undercounting question-led headings site-wide.
   const questionHeadings = all.reduce((n, p) => n + questionHeadingCount(p.html), 0);
+  // Per-page attribution, so the summary can't generalize "your headings are question-led"
+  // when all 16 live on the FAQ page and every other page has zero.
+  const questionHeadingPages = all.filter((p) => questionHeadingCount(p.html) > 0)
+    .map((p) => { try { return new URL(p.url).pathname || "/"; } catch { return p.url; } });
 
   // Deterministic presence detectors — the crawler doesn't execute JS and strips tags
   // before Claude reads the text, so these facts (not prose inference) are the ONLY
@@ -413,6 +417,7 @@ function analyzeSignals(crawl) {
     hasEntityGraph,
     hasOrganization,
     questionHeadings,
+    questionHeadingPages,
     formPages,
     hasMailto,
     hasTel,
@@ -625,7 +630,7 @@ DETERMINISTIC SIGNALS (ground truth — do not contradict):
 - geo coordinates present (a locatable entity): ${signals.hasGeo}
 - COMPLETE local entity (recognized type + geo): ${signals.completeLocalEntity}
 - Organization schema present: ${signals.hasOrganization}
-- question-led headings found: ${signals.questionHeadings}
+- question-led headings found: ${signals.questionHeadings}${signals.questionHeadings > 0 ? ` — carried by: ${(signals.questionHeadingPages || []).join(", ") || "n/a"} (do NOT generalize to the whole site; pages not listed have none)` : " (none anywhere)"}
 - pages with a real meta description: ${signals.pagesWithMeta}/${signals.pageCount}
 - TODAY'S DATE: ${new Date().toISOString().slice(0, 10)} — the current year is ${new Date().getFullYear()}. Content dated ${new Date().getFullYear()} is CURRENT, not forward-looking or premature.
 - newest year referenced on site: ${signals.newestYear || "none found"}${signals.looksStale ? ` (looks stale — nothing dated ${new Date().getFullYear() - 1} or later)` : ""}
