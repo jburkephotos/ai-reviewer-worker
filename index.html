@@ -71,6 +71,7 @@
   .voicetease .vlab{display:block;font-family:"SF Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#3f8c86;margin-bottom:6px}
   .voicetease em{display:block;font-size:15.5px;line-height:1.5;color:#1a1d1c;margin-bottom:8px}
   .voicetease .vnote{display:block;font-size:13px;line-height:1.5;color:rgba(26,29,28,.6)}
+  .methodnote{margin-top:14px;font-size:11.5px;font-style:italic;color:rgba(26,29,28,.45)}
   .meter .mtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
   .meter .mname{font-family:"SF Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mark);font-weight:600}
   .meter .mval{font-size:15px;font-weight:700}
@@ -370,7 +371,7 @@ function scorecard(d, r){
   // Brand & voice — one honest sentence from the same judgment read (no fake metric,
   // no locked bar): the tease for the human Reader Panel that comes with the full report.
   if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my <strong>AI Reader Panel</strong> — <strong>Mary</strong> the Skimmer, <strong>Frank</strong> the Skeptic, <strong>Dana</strong> the Price&#8209;Shopper, <strong>Tom</strong> the Ready Buyer, <strong>Rosa</strong> the Referrer, and <strong>Walt</strong> the Plain Reader — plus a top&#8209;tier copy editor. Their honest read on your site comes with the free full report below.</span></div>`;
-  m += `${checklist(d.signals || {})}</div>`;
+  m += `${checklist(d.signals || {})}<div class="methodnote">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is measured by Google PageSpeed Insights.</div></div>`;
   return m;
 }
 function checklist(s){
@@ -655,8 +656,8 @@ function deepReportForm(d) {
   // it cost money"). The report generates itself and lands in their inbox.
   return `<div class="deepform" id="deepform">
     <div class="qlab">The full report &middot; 100% free</div>
-    <div class="qhead">Get the complete page-by-page report — free.</div>
-    <div class="qsub">Everything above is the summary. The full report covers <strong>every page and every fix</strong> — the exact structured data, titles, and copy changes — plus <strong>The AI Reader Panel</strong>: six AI readers — and a top-tier copy editor — react to your site in their own words. No cost, no sales call, nothing to buy. It builds itself and lands in your inbox in a few minutes.</div>
+    <div class="qhead">Get the in-depth page-by-page report — free.</div>
+    <div class="qsub">Everything above is the summary. It reads <strong>the pages that matter most</strong> — up to 15 of them — and spells out <strong>every fix</strong>: the exact structured data, titles, and copy changes — plus <strong>The AI Reader Panel</strong>: six AI readers — and a top-tier copy editor — react to your site in their own words. No cost, no sales call, nothing to buy. It builds itself and lands in your inbox in a few minutes.</div>
     <div class="ff">
       <div class="ffrow">
         <label>Email<input type="email" id="f_email" autocomplete="email" placeholder="you@yourbusiness.com"></label>
@@ -677,7 +678,7 @@ function wireDeepForm(d) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = "Just a working email — that's all it takes."; msg.className = "ffmsg warn"; return; }
     const btn = document.getElementById('f_submit');
     btn.disabled = true;
-    msg.textContent = "Building your report — reading every page, gathering the panel…";
+    msg.textContent = "Building your report — reading your key pages, gathering the panel…";
     msg.className = "ffmsg";
     try {
       const res = await fetch('/api/deep', {
@@ -715,7 +716,7 @@ async function runDeepReport(d) {
     host.id = 'deepreport';
     document.getElementById('report').appendChild(host);
   }
-  const steps = ["Re-reading every page individually","Checking each page for AI-search readiness","Writing your page-by-page breakdown","Pulling it all together"];
+  const steps = ["Reading your key pages individually","Checking each page for AI-search readiness","Writing your page-by-page breakdown","Pulling it all together"];
   let si = 0;
   host.innerHTML = `<div class="deepwait"><span class="dots">${steps[0]}</span></div>`;
   const tick = setInterval(() => {
@@ -743,7 +744,7 @@ async function runDeepReport(d) {
 }
 
 function renderDeep(host, data) {
-  let h = `<div class="deephead">The full page-by-page report</div>`;
+  let h = `<div class="deephead">The page-by-page report</div>`;
   if (data.overall) h += `<div class="verdict">${esc(data.overall)}</div>`;
   for (const pg of (data.pages || [])) {
     if (!pg.findings || !pg.findings.length) continue;
@@ -760,7 +761,7 @@ function renderDeep(host, data) {
     }
     h += `</div>`;
   }
-  h += `<p class="note">That's every page on your site, with the specific fix for each. It's all yours — hand it to anyone, do it yourself, or have me do it with you.</p>`;
+  h += `<p class="note">Those are the pages that matter most on your site, with the specific fix for each. It's all yours — hand it to anyone, do it yourself, or have me do it with you.</p>`;
   host.innerHTML = h;
 }
 
