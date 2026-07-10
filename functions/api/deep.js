@@ -172,7 +172,7 @@ async function analyzePage(env, site, page) {
 
 Assess THIS ONE PAGE across three surfaces: organic SEO (title, meta, headings, structure), AI/answer search (schema, FAQ markup, question-led citable content, entity signals), and local/map where relevant.
 
-VOICE: editorial, specific, anti-slop. Plain and direct, a little warm. NEVER invent facts — if unknown, say "add/confirm." No "unlock/elevate/leverage." Name the actual things on THIS page, never boilerplate that could apply to any site.
+VOICE: editorial, specific, anti-slop. Written in Jeremy's editorial voice, but NEVER state or imply that Jeremy manually reviewed, hand-checked, or personally inspected anything — this analysis is automated and honest about it. Plain and direct, a little warm. NEVER invent facts — if unknown, say "add/confirm." No "unlock/elevate/leverage." Name the actual things on THIS page, never boilerplate that could apply to any site.
 
 ETHOS: this is a gift of knowledge. Lay out exactly what's critical so the owner could fix it themselves or hand it to anyone. The value is the complete, honest prescription.
 
@@ -215,7 +215,7 @@ ${text}`;
 async function synthesize(env, site, pages) {
   const digest = pages.map(p =>
     `${p.url} (${p.role}): ${p.findings.map(f => f.title).join("; ")}`).join("\n");
-  const system = `You are writing the 3-4 sentence opening verdict for an in-depth website report by Jeremy Burke (Oregon Coast publisher who fixes AI-search visibility). Plain, specific, warm, anti-slop, no invented facts. Name the single biggest pattern across the whole site and the highest-leverage thing to fix first. Return plain text only, no JSON, no fences.`;
+  const system = `You are writing the 3-4 sentence opening verdict for an in-depth website report by Jeremy Burke (Oregon Coast publisher who fixes AI-search visibility). Plain, specific, warm, anti-slop, no invented facts. Never imply Jeremy manually reviewed the site — the analysis is automated. Name the single biggest pattern across the whole site and the highest-leverage thing to fix first. Return plain text only, no JSON, no fences.`;
   const user = `SITE: ${site}\nTODAY'S DATE: ${new Date().toISOString().slice(0, 10)} (content dated ${new Date().getFullYear()} is CURRENT, not future)\nPER-PAGE FINDINGS:\n${digest}`;
   const data = await callClaude(env, system, user, 400);
   return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
@@ -391,7 +391,7 @@ async function emailVisitorReport(env, d, ctx, to) {
   const overall = d.overall ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:24px 0 16px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(d.overall)}</td></tr></table>` : "";
   const head = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;border-bottom:1px solid #d6d3c9;padding:0 0 8px;margin:26px 0 12px">The page-by-page report &middot; ${(d.pages || []).length}${ctx && ctx.signals && ctx.signals.siteSize > (d.pages || []).length ? ` of ~${ctx.signals.siteSize}` : ""} key pages</div>`;
   const signoff = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 0"><tr><td style="padding:16px 20px;background:#f4f2ec;border-radius:3px;font:400 14px/1.6 Georgia,serif;color:#1a1d1c">
-    Every fix in this report is yours to act on — do it yourself, hand it to anyone, or let me handle it. Just reply to this email and it comes straight to me. One honest expectation: search engines re-crawl in days and AI answers update on a lag — fixes show up over weeks, not hours.<br>
+    Every fix in this report is yours to act on — do it yourself, hand it to anyone, or let me handle it. Full transparency: this report is generated automatically by my audit engine — the same one that's graded 1,000+ local sites — and a copy lands in my inbox the moment it sends. Reply and you're talking to me, not a bot. One honest expectation: search engines re-crawl in days and AI answers update on a lag — fixes show up over weeks, not hours.<br>
     <span style="font:600 13px Georgia,serif">— Jeremy Burke</span> <span style="font:400 12px Georgia,serif;color:#777">· J. Burke Photos · Newport, Oregon</span>
   </td></tr></table>`;
   const grade = ctx && ctx.score && ctx.score.grade ? ` — grade ${ctx.score.grade}` : "";

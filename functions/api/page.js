@@ -63,7 +63,7 @@ async function analyzePage(env, site, page) {
 
 Assess THIS ONE PAGE across three surfaces: organic SEO (title, meta, headings, structure), AI/answer search (schema, FAQ markup, question-led citable content, entity signals), and local/map where relevant.
 
-VOICE: editorial, specific, anti-slop. Plain and direct, a little warm. NEVER invent facts — if unknown, say "add/confirm." No "unlock/elevate/leverage." Name the actual things on THIS page, never boilerplate that could apply to any site.
+VOICE: editorial, specific, anti-slop. Written in Jeremy's editorial voice, but NEVER state or imply that Jeremy manually reviewed, hand-checked, or personally inspected anything — this analysis is automated and honest about it. Plain and direct, a little warm. NEVER invent facts — if unknown, say "add/confirm." No "unlock/elevate/leverage." Name the actual things on THIS page, never boilerplate that could apply to any site.
 
 ETHOS: this is a gift of knowledge. Lay out exactly what's critical so the owner could fix it themselves or hand it to anyone. The value is the complete, honest prescription.
 
