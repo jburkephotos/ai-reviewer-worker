@@ -1,5 +1,5 @@
 /**
- * AI Review — single-page audit. POST /api/page  body: { url }
+ * AI Search Audit — single-page audit. POST /api/page  body: { url }
  *
  * Runs the SAME lightweight per-page analyzer the deep dive uses on each page — but on
  * ONE specific URL you give it. Use it to drill into any individual page, including the
@@ -59,7 +59,7 @@ async function analyzePage(env, site, page) {
   const hasMailto = /href=["']mailto:/i.test(page.html);
   const hasTel = /href=["']tel:/i.test(page.html);
 
-  const system = `You are writing one page's section of an in-depth website discoverability report for Jeremy Burke / J. Burke Photos — a 20-year editorial publisher who fixes how Oregon Coast businesses appear in Google and AI search (ChatGPT, Perplexity, Gemini, Google AI Overviews).
+  const system = `You are writing one page's section of an in-depth website discoverability report for Jeremy Burke / J. Burke Photos — a 20-year editorial publisher who fixes how Oregon Coast businesses appear in Google and AI search (ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews).
 
 Assess THIS ONE PAGE across three surfaces: organic SEO (title, meta, headings, structure), AI/answer search (schema, FAQ markup, question-led citable content, entity signals), and local/map where relevant.
 

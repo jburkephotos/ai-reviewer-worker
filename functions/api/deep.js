@@ -1,5 +1,5 @@
 /**
- * AI Review — DEEP page-by-page report. POST /api/deep  body: { url }
+ * AI Search Audit — DEEP page-by-page report. POST /api/deep  body: { url }
  *
  * This is the gated, expensive pass that runs AFTER someone submits the qualifying
  * form. It crawls the site and runs a Claude analysis PER PAGE, then a short synthesis,
@@ -168,7 +168,7 @@ async function analyzePage(env, site, page) {
   const hasMailto = /href=["']mailto:/i.test(page.html);
   const hasTel = /href=["']tel:/i.test(page.html);
 
-  const system = `You are writing one page's section of an in-depth website discoverability report for Jeremy Burke / J. Burke Photos — a 20-year editorial publisher who fixes how Oregon Coast businesses appear in Google and AI search (ChatGPT, Perplexity, Gemini, Google AI Overviews).
+  const system = `You are writing one page's section of an in-depth website discoverability report for Jeremy Burke / J. Burke Photos — a 20-year editorial publisher who fixes how Oregon Coast businesses appear in Google and AI search (ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews).
 
 Assess THIS ONE PAGE across three surfaces: organic SEO (title, meta, headings, structure), AI/answer search (schema, FAQ markup, question-led citable content, entity signals), and local/map where relevant.
 
@@ -380,7 +380,7 @@ async function sendEmailTo(env, to, subject, html) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${env.RESEND_API_KEY}` },
-    body: JSON.stringify({ from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>", to: [to], reply_to: env.LEAD_TO, subject, html }),
+    body: JSON.stringify({ from: env.LEAD_FROM || "AI Search Audit <onboarding@resend.dev>", to: [to], reply_to: env.LEAD_TO, subject, html }),
   });
   if (!r.ok) throw new Error("resend " + r.status);
 }
@@ -395,7 +395,7 @@ async function emailVisitorReport(env, d, ctx, to) {
     <span style="font:600 13px Georgia,serif">— Jeremy Burke</span> <span style="font:400 12px Georgia,serif;color:#777">· J. Burke Photos · Newport, Oregon</span>
   </td></tr></table>`;
   const grade = ctx && ctx.score && ctx.score.grade ? ` — grade ${ctx.score.grade}` : "";
-  await sendEmailTo(env, to, `Your full AI Review — ${safeHost(d.url)}${grade}`,
+  await sendEmailTo(env, to, `Your full AI Search Audit — ${safeHost(d.url)}${grade}`,
     emailShell(d.url, top + emailPanel(d.panel) + overall + head + pagesHtml + (ctx ? emailPhase1(ctx) : "") + signoff));
 }
 
@@ -448,7 +448,7 @@ async function emailOwnerDeep(env, d, ctx, meta, lead) {
   const head = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;border-bottom:1px solid #d6d3c9;padding:0 0 8px;margin:26px 0 12px">The page-by-page report &middot; ${(d.pages || []).length}${ctx && ctx.signals && ctx.signals.siteSize > (d.pages || []).length ? ` of ~${ctx.signals.siteSize}` : ""} key pages</div>`;
   const who = meta && meta.ownerRun ? " — YOU" : (meta && meta.where ? ` — ${meta.where}` : "");
   const leadTag = lead && lead.visitorEmail ? (lead.delivered ? `🎯 SENT to ${lead.visitorEmail} — ` : `⚠️ FORWARD NEEDED — `) : "";
-  await sendEmail(env, `${leadTag}AI Review DEEP — ${safeHost(d.url)}${who}`, emailShell(d.url, top + overall + head + pagesHtml + emailRunMeta(meta)));
+  await sendEmail(env, `${leadTag}AI Search Audit DEEP — ${safeHost(d.url)}${who}`, emailShell(d.url, top + overall + head + pagesHtml + emailRunMeta(meta)));
 }
 
 /* ---- branded email builders (mirror of audit.js; email-safe tables + inline styles) ---- */
@@ -499,10 +499,10 @@ function emailScorecard(d) {
   const verdict = r.summary ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:0 0 18px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(r.summary)}</td></tr></table>` : "";
   const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up</div>` +
     emailBar("Google / SEO", surf.organic, reads.organic) +
-    emailBar("AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", surf.answer, reads.answer) +
+    emailBar("AI Search · Google AI Overviews, ChatGPT, Claude, Gemini & Perplexity", surf.answer, reads.answer) +
     emailBar("Local / Map pack", surf.local, reads.local) +
     (d.speed ? emailBar("Speed · Core Web Vitals (mobile)", d.speed.score, d.speed.read) : "") +
-    `<div style="margin-top:10px;font:italic 11px Georgia,serif;color:#8a8478">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div>`;
+    `<div style="margin-top:10px;font:italic 11px Georgia,serif;color:#8a8478">Search-surface scores are the AI Search Audit's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div>`;
   return band + verdict + bars;
 }
 function emailPhase1(d) {
@@ -546,17 +546,17 @@ function emailPhase1(d) {
 function emailShell(url, inner) {
   return `<div style="background:#e8e6df;padding:24px 0;font-family:Georgia,serif"><table align="center" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto"><tr><td style="padding:0 24px">
     <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#d4622a;margin:0 0 4px">J. Burke Photos &middot; Discoverability</div>
-    <div style="font:700 34px Georgia,serif;color:#1a1d1c;border-bottom:2px solid #1a1d1c;padding:0 0 14px">AI Review</div>
+    <div style="font:700 34px Georgia,serif;color:#1a1d1c;border-bottom:2px solid #1a1d1c;padding:0 0 14px">AI Search Audit</div>
     <div style="font:400 13px Georgia,serif;color:#666;margin:12px 0 22px">${escHtml(url)}</div>
     ${inner}
-    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like Google AI Overviews, ChatGPT, and Gemini — and exactly what it takes to fix it. Yours to keep.</div>
+    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like Google AI Overviews, ChatGPT, Claude, Gemini, and Perplexity — and exactly what it takes to fix it. Yours to keep.</div>
   </td></tr></table></div>`;
 }
 async function sendEmail(env, subject, html) {
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${env.RESEND_API_KEY}` },
-    body: JSON.stringify({ from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>", to: [env.LEAD_TO], subject, html }),
+    body: JSON.stringify({ from: env.LEAD_FROM || "AI Search Audit <onboarding@resend.dev>", to: [env.LEAD_TO], subject, html }),
   });
 }
 function safeHost(u){ try { return new URL(u).host; } catch { return u; } }

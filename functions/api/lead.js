@@ -59,7 +59,7 @@ export async function onRequestPost({ request, env }) {
       const scoreStr = record.score && record.score.grade
         ? `${record.score.grade} (${record.score.pct}%)` : String(record.score);
       const body = [
-        `New AI Review lead`,
+        `New AI Search Audit lead`,
         ``,
         `Name:     ${record.name}`,
         `Email:    ${record.email}`,
@@ -83,10 +83,10 @@ export async function onRequestPost({ request, env }) {
           authorization: `Bearer ${env.RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>",
+          from: env.LEAD_FROM || "AI Search Audit <onboarding@resend.dev>",
           to: [env.LEAD_TO],
           reply_to: record.email,
-          subject: `${record.mockup ? "🎨 MOCKUP — " : ""}AI Review lead — ${record.business || record.name} (${record.tier})`,
+          subject: `${record.mockup ? "🎨 MOCKUP — " : ""}AI Search Audit lead — ${record.business || record.name} (${record.tier})`,
           text: body,
         }),
       });

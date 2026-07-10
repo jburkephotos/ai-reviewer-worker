@@ -1,5 +1,5 @@
 /**
- * AI Review — audit engine (Cloudflare Pages Function)
+ * AI Search Audit — audit engine (Cloudflare Pages Function)
  * Route: POST /api/audit   body: { url: "https://example.com" }
  *
  * Architecture (Option 3 — hybrid):
@@ -558,13 +558,13 @@ async function claudeJudgment(env, url, crawl, signals, tier, score) {
     return `URL: ${p.url}\nTITLE: ${title}\nTEXT: ${text}`;
   }).join("\n\n---\n\n");
 
-  const system = `You are the audit-judgment engine for "AI Review," the discoverability audit tool of Jeremy Burke / J. Burke Photos — a 20-year editorial publisher and Oregon Coast photographer who sells website AEO/GEO/SEO fixes to local businesses.
+  const system = `You are the audit-judgment engine for "AI Search Audit," the discoverability audit tool of Jeremy Burke / J. Burke Photos — a 20-year editorial publisher and Oregon Coast photographer who sells website AEO/GEO/SEO fixes to local businesses.
 
 Apply Jeremy's exact methodology:
 
 THREE SURFACES — assess each separately:
   1. ORGANIC SEO — classic Google ranking: titles, meta, headings, internal linking, crawlability.
-  2. ANSWER / GENERATIVE SEARCH (AEO/GEO) — whether ChatGPT, Perplexity, Gemini, and Google AI Overviews can read and cite this site: JSON-LD schema, FAQ markup, question-led headings, an entity graph (Organization/Person/LocalBusiness), citable factual copy.
+  2. ANSWER / GENERATIVE SEARCH (AEO/GEO) — whether ChatGPT, Claude, Perplexity, Gemini, and Google AI Overviews can read and cite this site: JSON-LD schema, FAQ markup, question-led headings, an entity graph (Organization/Person/LocalBusiness), citable factual copy.
   3. LOCAL / MAP — LocalBusiness schema, NAP consistency, geo signals, map presence.
 
 FIVE HARD GATES (frame fixes so they'd pass these):
@@ -799,7 +799,7 @@ function speedRead(s) {
 async function emailOwnerSummary(env, d, meta) {
   const html = emailShell(d.url, emailScorecard(d) + emailFindings(d.report) + emailPhase1(d) + emailRunMeta(meta));
   const who = meta && meta.ownerRun ? " — YOU" : (meta && meta.where ? ` — ${meta.where}` : "");
-  await sendEmail(env, `AI Review — ${safeHost(d.url)} — ${(d.score && d.score.grade) || ""} (${d.tier})${who}`, html);
+  await sendEmail(env, `AI Search Audit — ${safeHost(d.url)} — ${(d.score && d.score.grade) || ""} (${d.tier})${who}`, html);
 }
 
 /* ---- run attribution: WHO ran this audit (answers "where are these coming from") ---- */
@@ -874,10 +874,10 @@ function emailScorecard(d) {
   const verdict = r.summary ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:0 0 18px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(r.summary)}</td></tr></table>` : "";
   const bars = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;margin:0 0 14px">Where you show up</div>` +
     emailBar("Google / SEO", surf.organic, reads.organic) +
-    emailBar("AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", surf.answer, reads.answer) +
+    emailBar("AI Search · Google AI Overviews, ChatGPT, Claude, Gemini & Perplexity", surf.answer, reads.answer) +
     emailBar("Local / Map pack", surf.local, reads.local) +
     (d.speed ? emailBar("Speed · Core Web Vitals (mobile)", d.speed.score, d.speed.read) : "") +
-    `<div style="margin-top:10px;font:italic 11px Georgia,serif;color:#8a8478">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div>`;
+    `<div style="margin-top:10px;font:italic 11px Georgia,serif;color:#8a8478">Search-surface scores are the AI Search Audit's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div>`;
   return band + verdict + bars;
 }
 function emailFindings(report) {
@@ -931,17 +931,17 @@ function emailPhase1(d) {
 function emailShell(url, inner) {
   return `<div style="background:#e8e6df;padding:24px 0;font-family:Georgia,serif"><table align="center" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto"><tr><td style="padding:0 24px">
     <div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#d4622a;margin:0 0 4px">J. Burke Photos &middot; Discoverability</div>
-    <div style="font:700 34px Georgia,serif;color:#1a1d1c;border-bottom:2px solid #1a1d1c;padding:0 0 14px">AI Review</div>
+    <div style="font:700 34px Georgia,serif;color:#1a1d1c;border-bottom:2px solid #1a1d1c;padding:0 0 14px">AI Search Audit</div>
     <div style="font:400 13px Georgia,serif;color:#666;margin:12px 0 22px">${escHtml(url)}</div>
     ${inner}
-    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like Google AI Overviews, ChatGPT, and Gemini — and exactly what it takes to fix it. Yours to keep.</div>
+    <div style="border-top:2px solid #1a1d1c;margin:30px 0 0;padding:18px 0 0;font:400 12px/1.5 Georgia,serif;color:#777">A plain-language read of how your site shows up in Google, the map pack, and AI answers like Google AI Overviews, ChatGPT, Claude, Gemini, and Perplexity — and exactly what it takes to fix it. Yours to keep.</div>
   </td></tr></table></div>`;
 }
 async function sendEmail(env, subject, html) {
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${env.RESEND_API_KEY}` },
-    body: JSON.stringify({ from: env.LEAD_FROM || "AI Review <onboarding@resend.dev>", to: [env.LEAD_TO], subject, html }),
+    body: JSON.stringify({ from: env.LEAD_FROM || "AI Search Audit <onboarding@resend.dev>", to: [env.LEAD_TO], subject, html }),
   });
 }
 

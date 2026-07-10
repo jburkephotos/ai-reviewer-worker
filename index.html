@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Review — J. Burke Photos</title>
+<title>AI Search Audit — J. Burke Photos</title>
 <style>
   :root {
     --ink:#1a1d1c; --fog:#e8e6df; --fog-deep:#d6d3c9; --sand:#c4bca8;
@@ -240,8 +240,8 @@
 <div class="wrap">
   <header class="masthead">
     <div class="eyebrow">J. Burke Photos · Discoverability</div>
-    <h1 class="title">AI Review</h1>
-    <p class="subtitle">A plain-language audit of how your website shows up in Google, in the map pack, and in AI answers like Google's AI Overviews, ChatGPT, and Gemini — and exactly what it takes to fix it. Free, and yours to keep.</p>
+    <h1 class="title">AI Search Audit</h1>
+    <p class="subtitle">A plain-language audit of how your website shows up in Google, in the map pack, and in AI answers like Google's AI Overviews, ChatGPT, Claude, Gemini, and Perplexity — and exactly what it takes to fix it. Free, and yours to keep.</p>
   </header>
 
   <section class="panel">
@@ -354,7 +354,7 @@ function scorecard(d, r){
   const reads = r.surfaces || {};
   const rows = [
     { name:"Google / SEO", v: surf.organic, read: reads.organic },
-    { name:"AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", v: surf.answer, read: reads.answer },
+    { name:"AI Search · Google AI Overviews, ChatGPT, Claude, Gemini & Perplexity", v: surf.answer, read: reads.answer },
     { name:"Local / Map pack", v: surf.local, read: reads.local },
   ];
   if (d.speed) rows.push({ name:"Speed · Core Web Vitals (mobile)", v: d.speed.score, read: d.speed.read });
@@ -371,7 +371,7 @@ function scorecard(d, r){
   // Brand & voice — one honest sentence from the same judgment read (no fake metric,
   // no locked bar): the tease for the human Reader Panel that comes with the full report.
   if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my <strong>AI Reader Panel</strong> — <strong>Mary</strong> the Skimmer, <strong>Frank</strong> the Skeptic, <strong>Dana</strong> the Price&#8209;Shopper, <strong>Tom</strong> the Ready Buyer, <strong>Rosa</strong> the Referrer, and <strong>Walt</strong> the Plain Reader — plus a top&#8209;tier copy editor. Their honest read on your site comes with the free full report below.</span></div>`;
-  m += `${checklist(d.signals || {})}<div class="methodnote">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div></div>`;
+  m += `${checklist(d.signals || {})}<div class="methodnote">Search-surface scores are the AI Search Audit's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div></div>`;
   return m;
 }
 function checklist(s){
