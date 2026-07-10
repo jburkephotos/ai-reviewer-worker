@@ -391,7 +391,7 @@ async function emailVisitorReport(env, d, ctx, to) {
   const overall = d.overall ? `<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f2ec" style="border-radius:3px;margin:24px 0 16px"><tr><td style="padding:16px 20px;border-left:4px solid #2f4a3e;font:400 15px/1.5 Georgia,serif;color:#1a1d1c">${escHtml(d.overall)}</td></tr></table>` : "";
   const head = `<div style="font:600 11px monospace;letter-spacing:2px;text-transform:uppercase;color:#2f4a3e;border-bottom:1px solid #d6d3c9;padding:0 0 8px;margin:26px 0 12px">The page-by-page report &middot; ${(d.pages || []).length}${ctx && ctx.signals && ctx.signals.siteSize > (d.pages || []).length ? ` of ~${ctx.signals.siteSize}` : ""} key pages</div>`;
   const signoff = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 0"><tr><td style="padding:16px 20px;background:#f4f2ec;border-radius:3px;font:400 14px/1.6 Georgia,serif;color:#1a1d1c">
-    Every fix in this report is yours to act on — do it yourself, hand it to anyone, or let me handle it. Just reply to this email and it comes straight to me.<br>
+    Every fix in this report is yours to act on — do it yourself, hand it to anyone, or let me handle it. Just reply to this email and it comes straight to me. One honest expectation: search engines re-crawl in days and AI answers update on a lag — fixes show up over weeks, not hours.<br>
     <span style="font:600 13px Georgia,serif">— Jeremy Burke</span> <span style="font:400 12px Georgia,serif;color:#777">· J. Burke Photos · Newport, Oregon</span>
   </td></tr></table>`;
   const grade = ctx && ctx.score && ctx.score.grade ? ` — grade ${ctx.score.grade}` : "";
@@ -502,7 +502,7 @@ function emailScorecard(d) {
     emailBar("AI Search · Google AI Overviews, ChatGPT, Gemini & Perplexity", surf.answer, reads.answer) +
     emailBar("Local / Map pack", surf.local, reads.local) +
     (d.speed ? emailBar("Speed · Core Web Vitals (mobile)", d.speed.score, d.speed.read) : "") +
-    `<div style="margin-top:10px;font:italic 11px Georgia,serif;color:#8a8478">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is measured by Google PageSpeed Insights.</div>`;
+    `<div style="margin-top:10px;font:italic 11px Georgia,serif;color:#8a8478">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div>`;
   return band + verdict + bars;
 }
 function emailPhase1(d) {

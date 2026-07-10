@@ -371,7 +371,7 @@ function scorecard(d, r){
   // Brand & voice — one honest sentence from the same judgment read (no fake metric,
   // no locked bar): the tease for the human Reader Panel that comes with the full report.
   if (r.voice) m += `<div class="voicetease"><span class="vlab">Brand &amp; voice</span><em>&ldquo;${esc(r.voice)}&rdquo;</em><span class="vnote">The bars above measure whether machines can find you. Whether <strong>humans believe you</strong> is judged by my <strong>AI Reader Panel</strong> — <strong>Mary</strong> the Skimmer, <strong>Frank</strong> the Skeptic, <strong>Dana</strong> the Price&#8209;Shopper, <strong>Tom</strong> the Ready Buyer, <strong>Rosa</strong> the Referrer, and <strong>Walt</strong> the Plain Reader — plus a top&#8209;tier copy editor. Their honest read on your site comes with the free full report below.</span></div>`;
-  m += `${checklist(d.signals || {})}<div class="methodnote">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is measured by Google PageSpeed Insights.</div></div>`;
+  m += `${checklist(d.signals || {})}<div class="methodnote">Search-surface scores are AI Review's own machine-readability methodology — not a Google rating. Speed is a single Google PageSpeed mobile lab test and varies run to run.</div></div>`;
   return m;
 }
 function checklist(s){
