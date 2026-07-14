@@ -588,12 +588,23 @@ function render(d) {
 
   // deep-report qualifying form (the gate to the full page-by-page report)
   h += deepReportForm(d);
+  // OWNER ONLY: run the full page-by-page report inline — no email, any tier (incl. enterprise).
+  if (OWNER) h += `<div class="deepform" id="ownerdeep" style="border:1px dashed var(--mark)">
+    <div class="qlab">Owner mode</div>
+    <div class="qhead">Run the full deep dive now</div>
+    <div class="qsub">Renders the page-by-page report right here — no email, no gate, works on any tier.</div>
+    <button class="run" id="owner_deep_btn">Run the full deep dive now</button>
+  </div>`;
   if (!document.getElementById('ownertool')) h += singlePageTool();  // owner mode already shows it up top
 
   reportEl.innerHTML = h;
   reportEl.classList.add('show');
   reportEl.scrollIntoView({ behavior:"smooth", block:"start" });
   wireDeepForm(d);
+  if (OWNER) {
+    const ob = document.getElementById('owner_deep_btn');
+    if (ob) ob.addEventListener('click', () => { ob.disabled = true; ob.textContent = 'Running…'; runDeepReport(d); });
+  }
   wirePageTool();
 }
 
